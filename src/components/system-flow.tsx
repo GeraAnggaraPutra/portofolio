@@ -28,7 +28,7 @@ export function SystemFlow() {
       const nodes = gsap.utils.toArray<HTMLElement>("[data-system-node]");
       const lines = gsap.utils.toArray<HTMLElement>("[data-system-line]");
 
-      gsap.set(nodes, { opacity: 0.35, y: 18 });
+      gsap.set(nodes, { opacity: 0, y: 18 });
       gsap.set(lines, { scaleX: 0, transformOrigin: "left center" });
 
       const timeline = gsap.timeline({

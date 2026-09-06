@@ -60,7 +60,7 @@ export function Navbar() {
         {/* Mobile drawer */}
         <div
           className={cn(
-            "overflow-hidden rounded-b-xl border-x border-b border-white/[0.08] bg-[#07090f]/95 transition-all duration-300 lg:hidden",
+            "overflow-hidden rounded-b-xl border-x border-b border-white/[0.12] bg-[#0a0b0f] transition-all duration-300 lg:hidden",
             open ? "max-h-72 opacity-100" : "max-h-0 opacity-0",
           )}
         >
@@ -70,7 +70,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="py-2.5 text-sm text-zinc-300 transition hover:text-white"
+                className="py-2.5 text-sm text-zinc-100 transition hover:text-white"
               >
                 {item.label}
               </a>

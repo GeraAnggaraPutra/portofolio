@@ -1,23 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 export function Cursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
+  const [show, setShow] = useState(false);
 
+  // Effect 1: detect touch — runs once on mount
   useEffect(() => {
+    if (!window.matchMedia("(pointer: coarse)").matches) setShow(true);
+  }, []);
+
+  // Effect 2: set up GSAP — runs after show=true renders the DOM elements
+  useEffect(() => {
+    if (!show) return;
     const dot = dotRef.current;
     const ring = ringRef.current;
     if (!dot || !ring) return;
 
-    // Touch devices keep native cursor
-    if (window.matchMedia("(pointer: coarse)").matches) return;
-
     document.documentElement.style.cursor = "none";
 
-    // quickTo for perf — no new tween per frame
     const dotX = gsap.quickTo(dot, "x", { duration: 0.08, ease: "power2.out" });
     const dotY = gsap.quickTo(dot, "y", { duration: 0.08, ease: "power2.out" });
     const ringX = gsap.quickTo(ring, "x", { duration: 0.38, ease: "power3.out" });
@@ -30,7 +34,6 @@ export function Cursor() {
       ringY(e.clientY);
     };
 
-    // Delegation — catches all interactive, including dynamic ones
     const onOver = (e: MouseEvent) => {
       const target = e.target as Element;
       if (target.closest("a, button, [role=button], input, textarea, select, label")) {
@@ -46,12 +49,8 @@ export function Cursor() {
       }
     };
 
-    const onLeave = () => {
-      gsap.to([dot, ring], { opacity: 0, duration: 0.22 });
-    };
-    const onEnterDoc = () => {
-      gsap.to([dot, ring], { opacity: 1, duration: 0.22 });
-    };
+    const onLeave = () => gsap.to([dot, ring], { opacity: 0, duration: 0.22 });
+    const onEnterDoc = () => gsap.to([dot, ring], { opacity: 1, duration: 0.22 });
 
     window.addEventListener("mousemove", onMove, { passive: true });
     document.addEventListener("mouseover", onOver);
@@ -67,32 +66,23 @@ export function Cursor() {
       document.removeEventListener("mouseleave", onLeave);
       document.removeEventListener("mouseenter", onEnterDoc);
     };
-  }, []);
+  }, [show]);
+
+  if (!show) return null;
 
   return (
     <>
-      {/* Dot — snaps instantly */}
       <div
         ref={dotRef}
         aria-hidden="true"
         className="pointer-events-none fixed left-0 top-0 z-[9999] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          width: 7,
-          height: 7,
-          background: "rgba(251,191,36,0.95)",
-          boxShadow: "0 0 12px rgba(251,191,36,0.7)",
-        }}
+        style={{ width: 7, height: 7, background: "rgba(251,191,36,0.95)", boxShadow: "0 0 12px rgba(251,191,36,0.7)" }}
       />
-      {/* Ring — lags behind for feel */}
       <div
         ref={ringRef}
         aria-hidden="true"
         className="pointer-events-none fixed left-0 top-0 z-[9999] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          width: 36,
-          height: 36,
-          border: "1.5px solid rgba(251,191,36,0.35)",
-        }}
+        style={{ width: 36, height: 36, border: "1.5px solid rgba(251,191,36,0.35)" }}
       />
     </>
   );

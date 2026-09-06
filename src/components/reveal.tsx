@@ -16,12 +16,12 @@ export function Reveal({
   className,
   delay = 0,
   y = 26,
-  viewport = { once: true, margin: "-80px" },
+  viewport = { once: true, margin: "-40px" },
 }: RevealProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y, filter: "blur(8px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1], delay }}
       viewport={viewport}
       className={className}
@@ -42,7 +42,7 @@ export function Stagger({
     <motion.div
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, margin: "-70px" }}
+      viewport={{ once: true, margin: "-30px" }}
       variants={{
         hidden: {},
         show: {
@@ -68,8 +68,8 @@ export function StaggerItem({
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
-        show: { opacity: 1, y: 0, filter: "blur(0px)" },
+        hidden: { opacity: 0, y: 18 },
+        show: { opacity: 1, y: 0 },
       }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className={cn(className)}
