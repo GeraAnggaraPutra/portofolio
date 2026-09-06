@@ -165,7 +165,7 @@ export function Hero() {
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           style={{ x: cardX, y: cardY }}
-          className="relative mx-auto aspect-[0.96] w-full max-w-[31rem] max-sm:h-auto max-sm:aspect-auto max-lg:mt-2"
+          className="relative mx-auto aspect-[0.96] w-full max-w-[31rem] max-sm:h-[28rem] max-sm:aspect-auto max-lg:mt-2"
         >
           <div className="scanline absolute inset-0 flex flex-col rounded-[2rem] border border-white/[0.08] bg-gradient-to-b from-[#161410] to-[#0d0c0a] p-4 shadow-2xl">
             <div className="flex items-center gap-2 border-b border-white/[0.07] pb-4">
