@@ -12,6 +12,7 @@ import { SystemFlow } from "@/components/system-flow";
 import { TechStack } from "@/components/stack";
 import { TechnicalNotes } from "@/components/notes";
 import { Education } from "@/components/education";
+import { SiteStack } from "@/components/site-stack";
 import { ValueProps } from "@/components/value-props";
 
 export default function Home() {
@@ -34,6 +35,7 @@ export default function Home() {
           <TechnicalNotes />
           <Contact />
         </main>
+        <SiteStack />
         <Footer />
       </div>
     </>

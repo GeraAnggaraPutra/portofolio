@@ -471,6 +471,14 @@ export const contactLinks = [
   { label: "GitHub", value: "GeraAnggaraPutra", href: "https://github.com/GeraAnggaraPutra", icon: Github },
 ];
 
+export const siteStack = {
+  title: "This Portfolio",
+  eyebrow: "Personal website",
+  description:
+    "A personal portfolio website built with Next.js and TypeScript to showcase my backend engineering experience, selected projects, work history, and technical notes.",
+  stack: ["Next.js", "TypeScript", "Tailwind CSS", "Lucide Icons"],
+};
+
 export const education = [
   {
     school: "SMK Assalaam Bandung",
