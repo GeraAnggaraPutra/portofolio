@@ -103,7 +103,7 @@ export const projects: Project[] = [
       "Payroll and attendance workflows can fail halfway or silently duplicate when consistency is not designed in from the start.",
     impact:
       "Applied transactions, idempotent processing, Redis caching, background workers, custom API Gateway, and full observability across services.",
-    stack: ["Go", "PostgreSQL", "Redis", "Microservices", "Grafana", "Loki", "Prometheus"],
+    stack: ["Go", "PostgreSQL", "Redis", "S3", "Microservices", "Grafana", "Loki", "Prometheus"],
     accent: "cyan",
     bullets: [
     "Engineered core backend services for a SaaS-based HRIS platform using Go, PostgreSQL, Redis, and microservice architecture.",
@@ -469,6 +469,16 @@ export const contactLinks = [
   { label: "Email", value: "anggaragera@gmail.com", href: "mailto:anggaragera@gmail.com", icon: Mail },
   { label: "LinkedIn", value: "gera-anggara-putra", href: "https://linkedin.com/in/gera-anggara-putra", icon: Network },
   { label: "GitHub", value: "GeraAnggaraPutra", href: "https://github.com/GeraAnggaraPutra", icon: Github },
+];
+
+export const education = [
+  {
+    school: "SMK Assalaam Bandung",
+    major: "Rekayasa Perangkat Lunak",
+    period: "Jun 2020 – Jun 2023",
+    description:
+      "Focused on Laravel-based web development and MySQL database systems. Supplemented with basic Java programming and Flutter for mobile app prototyping.",
+  },
 ];
 
 export const valueProps = [

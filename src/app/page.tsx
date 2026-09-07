@@ -11,6 +11,7 @@ import { SmoothScroll } from "@/components/smooth-scroll";
 import { SystemFlow } from "@/components/system-flow";
 import { TechStack } from "@/components/stack";
 import { TechnicalNotes } from "@/components/notes";
+import { Education } from "@/components/education";
 import { ValueProps } from "@/components/value-props";
 
 export default function Home() {
@@ -29,6 +30,7 @@ export default function Home() {
           <ValueProps />
           <ExperienceTimeline />
           <TechStack />
+          <Education />
           <TechnicalNotes />
           <Contact />
         </main>
