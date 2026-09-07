@@ -2,6 +2,7 @@ import {
   Activity,
   BriefcaseBusiness,
   Cable,
+  Cloud,
   Code2,
   Database,
   FileText,
@@ -114,6 +115,7 @@ export const projects: Project[] = [
     "Delivered async background processing for payroll jobs using goroutine-based workers, with real-time process status tracking, per-employee error reporting, and progress visibility.",
     "Implemented full observability stack using Grafana, Loki, Alloy, and Prometheus — enabling centralized structured logs, service metrics, and correlation ID-based request tracing across all backend services.",
     "Maintained consistent clean architecture patterns across services: layered separation (domain → application → infrastructure → presentation), company-scoped data isolation, soft delete, Swagger documentation, and Docker-based deployment templates.",
+    "Integrated S3-compatible object storage to manage application file uploads and document storage across HRIS workflows.",
   ],
   },
   {
@@ -291,6 +293,43 @@ export const projects: Project[] = [
       "Developed a company profile website, including its Content Management System (CMS) and frontend interface, utilizing GORM for database interactions.",
     ],
   },
+  {
+    title: "Go Backup Database",
+    eyebrow: "Personal project · Open source",
+    summary:
+      "CLI tool for automated MySQL and PostgreSQL backups — interactive table selection, scheduled runs, Telegram alerts, GCS cloud sync, and a live web dashboard.",
+    problem:
+      "Manual database backups are error-prone and unmonitored — a server failure with no off-site copy means permanent data loss.",
+    impact:
+      "Built Go CLI with cron scheduling, interactive TUI (Survey), ZIP compression, real-time Telegram notifications, GCS cloud persistence, and a web dashboard for archive management.",
+    stack: ["Go", "MySQL", "PostgreSQL", "Google Cloud Storage", "Telegram Bot API", "Docker", "Cron"],
+    accent: "cyan",
+    bullets: [
+      "Built a Go-based CLI utility for automated MySQL and PostgreSQL database backups with interactive terminal table selection powered by Survey.",
+      "Implemented cron job integration for scheduled backups (e.g. daily midnight) with flexible .env-based or interactive configuration.",
+      "Automated ZIP compression of dump files and integrated Google Cloud Storage for off-site backup persistence and disaster recovery.",
+      "Added real-time Telegram bot notifications on backup success or failure, including file details and timestamps in HTML-formatted messages.",
+      "Built a real-time web management dashboard for monitoring backup archives, batch operations, and server disk usage with auto-refresh.",
+      "Containerized the full tool with Docker and Docker Compose for consistent deployment across environments.",
+    ],
+  },
+  {
+    title: "Rental Mobil",
+    eyebrow: "SMK project · Full stack",
+    summary:
+      "Car rental management information system built during vocational high school — covering bookings, vehicle management, and admin workflows.",
+    problem:
+      "Manual car rental tracking created booking conflicts and poor visibility into vehicle availability and customer records.",
+    impact:
+      "Built full-stack Laravel app with booking flows, vehicle status management, customer records, and admin dashboard — a first production-shaped project.",
+    stack: ["Laravel", "PHP", "MySQL", "JavaScript", "Blade", "Bootstrap"],
+    accent: "amber",
+    bullets: [
+      "Developed a full-stack car rental management system during vocational high school using Laravel, PHP, and MySQL.",
+      "Implemented booking management, vehicle availability tracking, customer records, and admin control panel.",
+      "Collaborated with one other contributor on the project.",
+    ],
+  },
 ];
 
 export const experiences: Experience[] = [
@@ -367,7 +406,7 @@ export const skillGroups: SkillGroup[] = [
   {
     title: "Backend Mindset",
     icon: Workflow,
-    items: ["Go", "REST API", "Microservices", "API Gateway", "Transactions"],
+    items: ["Go", "REST API", "Microservices", "API Gateway", "Transactions", "Kafka"],
   },
   {
     title: "Data Layer",
@@ -378,6 +417,11 @@ export const skillGroups: SkillGroup[] = [
     title: "Delivery",
     icon: GitBranch,
     items: ["Git", "GitHub", "GitLab", "Docker", "Docker Compose", "CI/CD"],
+  },
+  {
+    title: "Cloud & Integrations",
+    icon: Cloud,
+    items: ["Google Cloud Storage", "Amazon S3", "Firebase (FCM)", "Xendit", "Midtrans", "GoPay", "Telegram Bot API", "REST Webhooks"],
   },
   {
     title: "Observability",
