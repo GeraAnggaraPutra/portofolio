@@ -27,6 +27,7 @@ export type Project = {
   stack: string[];
   accent: "cyan" | "emerald" | "amber" | "blue";
   bullets: string[];
+  github?: string;
 };
 
 export type Experience = {
@@ -296,6 +297,7 @@ export const projects: Project[] = [
   {
     title: "Go Backup Database",
     eyebrow: "Personal project · Open source",
+    github: "https://github.com/GeraAnggaraPutra/go-backup",
     summary:
       "CLI tool for automated MySQL and PostgreSQL backups — interactive table selection, scheduled runs, Telegram alerts, GCS cloud sync, and a live web dashboard.",
     problem:
@@ -314,8 +316,9 @@ export const projects: Project[] = [
     ],
   },
   {
-    title: "Rental Mobil",
+    title: "Car Rental System",
     eyebrow: "SMK project · Full stack",
+    github: "https://github.com/GeraAnggaraPutra/Rental-Mobil",
     summary:
       "Car rental management information system built during vocational high school — covering bookings, vehicle management, and admin workflows.",
     problem:
@@ -466,4 +469,27 @@ export const contactLinks = [
   { label: "Email", value: "anggaragera@gmail.com", href: "mailto:anggaragera@gmail.com", icon: Mail },
   { label: "LinkedIn", value: "gera-anggara-putra", href: "https://linkedin.com/in/gera-anggara-putra", icon: Network },
   { label: "GitHub", value: "GeraAnggaraPutra", href: "https://github.com/GeraAnggaraPutra", icon: Github },
+];
+
+export const valueProps = [
+  {
+    title: "Scalable Backend Services",
+    description:
+      "Building Go-based REST APIs, microservices, API Gateway, PostgreSQL/MySQL data flows, Redis caching, and Docker-based development environments.",
+  },
+  {
+    title: "Reliable Business Workflows",
+    description:
+      "Experienced with database transactions, idempotent processing, background jobs, and status tracking for multi-step business processes.",
+  },
+  {
+    title: "Production Observability",
+    description:
+      "Implemented Grafana, Loki, Alloy, and Prometheus to support centralized logs, service metrics, and faster issue investigation.",
+  },
+  {
+    title: "Product Team Collaboration",
+    description:
+      "Comfortable working with frontend engineers, system analysts, UI/UX, QA, and DevOps to translate requirements into backend systems.",
+  },
 ];

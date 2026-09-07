@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Github } from "lucide-react";
 import { projects, type Project } from "@/data/portfolio";
 import { SectionHeader } from "./section-header";
 import { Stagger, StaggerItem } from "./reveal";
@@ -98,11 +98,25 @@ export function Projects() {
                   </AnimatePresence>
                 </div>
 
-                {/* Arrow */}
-                <ArrowUpRight
-                  size={18}
-                  className="mt-1.5 shrink-0 text-zinc-600 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-amber-400"
-                />
+                {/* Right side: GitHub link (if any) + Arrow */}
+                <div className="mt-1.5 flex shrink-0 items-center gap-2">
+                  {project.github && (
+                    <a
+                      href={project.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label="View on GitHub"
+                      className="text-zinc-600 transition hover:text-violet-400"
+                    >
+                      <Github size={16} />
+                    </a>
+                  )}
+                  <ArrowUpRight
+                    size={18}
+                    className="text-zinc-600 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-amber-400"
+                  />
+                </div>
               </div>
             </motion.article>
           </StaggerItem>
