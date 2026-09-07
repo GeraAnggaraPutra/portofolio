@@ -100,7 +100,7 @@ export function ExperienceTimeline() {
           subtitle={selected.company}
           stack={selected.stack}
           bullets={selected.bullets}
-          accent="cyan"
+
           onClose={() => setSelected(null)}
         />
       )}
