@@ -11,26 +11,10 @@ type DetailModalProps = {
   subtitle: string;
   stack: string[];
   bullets: string[];
-  accent?: "cyan" | "emerald" | "amber" | "blue";
   onClose: () => void;
 };
 
-const accentColor: Record<string, string> = {
-  cyan: "text-amber-400",
-  emerald: "text-amber-400",
-  amber: "text-amber-400",
-  blue: "text-amber-400",
-};
-
-const dotColor: Record<string, string> = {
-  cyan: "bg-amber-400",
-  emerald: "bg-amber-400",
-  amber: "bg-amber-400",
-  blue: "bg-amber-400",
-};
-
-export function DetailModal({ open, title, subtitle, stack, bullets, accent = "cyan", onClose }: DetailModalProps) {
-  // Use position:fixed technique — preserves portal scroll, unlike overflow:hidden on html
+export function DetailModal({ open, title, subtitle, stack, bullets, onClose }: DetailModalProps) {
   useEffect(() => {
     if (!open) return;
     const scrollY = window.scrollY;
@@ -52,7 +36,6 @@ export function DetailModal({ open, title, subtitle, stack, bullets, accent = "c
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop — swallows wheel events so background never scrolls */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -64,7 +47,6 @@ export function DetailModal({ open, title, subtitle, stack, bullets, accent = "c
             aria-hidden="true"
           />
 
-          {/* Sheet — overflow-y-auto so the panel itself scrolls */}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -77,10 +59,8 @@ export function DetailModal({ open, title, subtitle, stack, bullets, accent = "c
             onClick={(e) => e.stopPropagation()}
             onWheel={(e) => e.stopPropagation()}
           >
-            {/* Drag handle (mobile only) */}
             <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-white/20 md:hidden" />
 
-            {/* Close button */}
             <button
               onClick={onClose}
               aria-label="Close"
@@ -89,13 +69,11 @@ export function DetailModal({ open, title, subtitle, stack, bullets, accent = "c
               <X size={16} />
             </button>
 
-            {/* Header */}
-            <p className={`mono text-xs font-medium uppercase tracking-[0.22em] ${accentColor[accent]}`}>
+            <p className="mono text-xs font-medium uppercase tracking-[0.22em] text-amber-400">
               {subtitle}
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{title}</h2>
 
-            {/* Stack pills */}
             <div className="mt-4 flex flex-wrap gap-1.5">
               {stack.map((t) => (
                 <span
@@ -107,14 +85,12 @@ export function DetailModal({ open, title, subtitle, stack, bullets, accent = "c
               ))}
             </div>
 
-            {/* Divider */}
             <div className="my-5 h-px bg-white/[0.07]" />
 
-            {/* Bullet points */}
             <ul className="space-y-3.5">
               {bullets.map((bullet, i) => (
                 <li key={i} className="flex gap-3">
-                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${dotColor[accent]}`} />
+                  <span className="mt-1.5 size-2 shrink-0 rounded-full bg-amber-400" />
                   <span className="text-sm leading-[1.8] text-zinc-300">{bullet}</span>
                 </li>
               ))}

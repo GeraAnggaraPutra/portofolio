@@ -10,7 +10,7 @@ import { DetailModal } from "./detail-modal";
 
 export function Projects() {
   const [selected, setSelected] = useState<Project | null>(null);
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   return (
     <section id="projects" className="container-x py-24 sm:py-32">
@@ -24,9 +24,17 @@ export function Projects() {
         {projects.map((project, index) => (
           <StaggerItem key={project.title}>
             <motion.article
-              onClick={() => setSelected(project)}
-              onHoverStart={() => setHoveredIdx(index)}
-              onHoverEnd={() => setHoveredIdx(null)}
+              onClick={() => {
+                // Mobile: first tap expands, second tap opens modal
+                if (window.matchMedia("(pointer: coarse)").matches) {
+                  if (expandedIdx === index) { setSelected(project); setExpandedIdx(null); }
+                  else setExpandedIdx(index);
+                } else {
+                  setSelected(project);
+                }
+              }}
+              onHoverStart={() => { if (!window.matchMedia("(pointer: coarse)").matches) setExpandedIdx(index); }}
+              onHoverEnd={() => { if (!window.matchMedia("(pointer: coarse)").matches) setExpandedIdx(null); }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && setSelected(project)}
@@ -64,9 +72,9 @@ export function Projects() {
                     {project.summary}
                   </p>
 
-                  {/* Hover expand: problem + move */}
+                  {/* Expand: hover on desktop, first tap on mobile */}
                   <AnimatePresence>
-                    {hoveredIdx === index && (
+                    {expandedIdx === index && (
                       <motion.div
                         key="expand"
                         initial={{ height: 0, opacity: 0 }}
@@ -130,7 +138,6 @@ export function Projects() {
           subtitle={selected.eyebrow}
           stack={selected.stack}
           bullets={selected.bullets}
-          accent={selected.accent}
           onClose={() => setSelected(null)}
         />
       )}
