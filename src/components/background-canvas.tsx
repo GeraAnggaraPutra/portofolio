@@ -21,7 +21,8 @@ function drawBox(
   bx: number,
   by: number,
   h: number,
-  wave: number, // used for subtle top-face brightness
+  wave: number,
+  glow: number, // 0..1, mouse proximity — amber tint
 ) {
   if (h < 1) return;
 
@@ -34,33 +35,35 @@ function drawBox(
   const br = { x: bx + TW / 2, y: by };
   const bf = { x: bx, y: by + TH / 2 };
 
-  // Left face
+  // Left face — slightly amber-tinted when glowing
+  const lf = `rgba(${Math.round(10 + glow * 30)},${Math.round(9 + glow * 12)},5,1)`;
   ctx.beginPath();
   ctx.moveTo(bl.x, bl.y);
   ctx.lineTo(bb.x, bb.y);
   ctx.lineTo(tb.x, tb.y);
   ctx.lineTo(tl.x, tl.y);
   ctx.closePath();
-  ctx.fillStyle = "#0a0905";
+  ctx.fillStyle = lf;
   ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.02)";
+  ctx.strokeStyle = `rgba(255,255,255,${0.02 + glow * 0.04})`;
   ctx.lineWidth = 0.5;
   ctx.stroke();
 
   // Right face
+  const rf = `rgba(${Math.round(13 + glow * 25)},${Math.round(11 + glow * 10)},7,1)`;
   ctx.beginPath();
   ctx.moveTo(br.x, br.y);
   ctx.lineTo(bf.x, bf.y);
   ctx.lineTo(tf.x, tf.y);
   ctx.lineTo(tr.x, tr.y);
   ctx.closePath();
-  ctx.fillStyle = "#0d0b07";
+  ctx.fillStyle = rf;
   ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.025)";
+  ctx.strokeStyle = `rgba(255,255,255,${0.025 + glow * 0.04})`;
   ctx.lineWidth = 0.5;
   ctx.stroke();
 
-  // Top face — brightness varies with wave (no color, just warm neutral)
+  // Top face — amber glow when near cursor
   ctx.beginPath();
   ctx.moveTo(tl.x, tl.y);
   ctx.lineTo(tb.x, tb.y);
@@ -68,13 +71,15 @@ function drawBox(
   ctx.lineTo(tf.x, tf.y);
   ctx.closePath();
 
-  // wave -1..1 → opacity 0.02..0.10
-  const topBrightness = 0.03 + Math.max(0, wave) * 0.09;
-  ctx.fillStyle = `rgba(255,248,235,${topBrightness})`;
+  const topBrightness = 0.03 + Math.max(0, wave) * 0.09 + glow * 0.35;
+  // Blend warm-white → amber based on glow
+  const tr2 = 255;
+  const tg = Math.round(248 - glow * 60);
+  const tb2 = Math.round(235 - glow * 180);
+  ctx.fillStyle = `rgba(${tr2},${tg},${tb2},${topBrightness})`;
   ctx.fill();
 
-  // Top edge — very subtle
-  ctx.strokeStyle = `rgba(255,248,235,${topBrightness * 0.6})`;
+  ctx.strokeStyle = `rgba(${tr2},${tg},${tb2},${topBrightness * 0.55})`;
   ctx.lineWidth = 0.5;
   ctx.stroke();
 }
@@ -114,6 +119,10 @@ export function BackgroundCanvas() {
     let time = 0;
     let offsetX = 0;
     let offsetY = 0;
+    let mx = -9999, my = -9999;
+
+    const onMouseMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
 
     const calcOffset = () => {
       offsetX = W / 2;
@@ -136,10 +145,16 @@ export function BackgroundCanvas() {
           Math.sin(box.col * 0.25 - box.row * 0.38 + time * 0.65) * 0.45;
 
         box.wave += (wave - box.wave) * 0.06;
-        const targetH = box.baseH + (wave + 1) * 16;
-        box.currentH += (targetH - box.currentH) * 0.05;
 
         const { x, y } = toScreen(box.col, box.row);
+
+        // Mouse proximity glow — amber ripple near cursor
+        const dx = x - mx, dy = y - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const glow = Math.max(0, 1 - dist / 200);
+
+        const targetH = box.baseH + (wave + 1) * 16 + glow * 40;
+        box.currentH += (targetH - box.currentH) * 0.08;
 
         if (
           x + TW < 0 || x - TW > W ||
@@ -152,7 +167,7 @@ export function BackgroundCanvas() {
         if (edgeFade < 0.02) continue;
 
         ctx.globalAlpha = edgeFade;
-        drawBox(ctx, x, y, box.currentH, box.wave);
+        drawBox(ctx, x, y, box.currentH, box.wave, glow);
       }
       ctx.globalAlpha = 1;
 
@@ -176,6 +191,7 @@ export function BackgroundCanvas() {
     return () => {
       gsap.ticker.remove(ticker);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouseMove);
     };
   }, []);
 

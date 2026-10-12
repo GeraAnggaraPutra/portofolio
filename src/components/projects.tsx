@@ -1,12 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, type ReactNode, type MouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Github } from "lucide-react";
 import { projects, type Project } from "@/data/portfolio";
 import { SectionHeader } from "./section-header";
 import { Stagger, StaggerItem } from "./reveal";
 import { DetailModal } from "./detail-modal";
+
+function TiltRow({ children, className }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const rx = ((e.clientY - rect.top) / rect.height - 0.5) * -5;
+    const ry = ((e.clientX - rect.left) / rect.width - 0.5) * 8;
+    ref.current.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (!ref.current) return;
+    ref.current.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg)";
+  };
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={className}
+      style={{ transition: "transform 0.12s ease-out", willChange: "transform" }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function Projects() {
   const [selected, setSelected] = useState<Project | null>(null);
@@ -23,6 +52,7 @@ export function Projects() {
       <Stagger className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
         {projects.map((project, index) => (
           <StaggerItem key={project.title}>
+            <TiltRow>
             <motion.article
               onClick={() => {
                 // Mobile: first tap expands, second tap opens modal
@@ -127,6 +157,7 @@ export function Projects() {
                 </div>
               </div>
             </motion.article>
+            </TiltRow>
           </StaggerItem>
         ))}
       </Stagger>

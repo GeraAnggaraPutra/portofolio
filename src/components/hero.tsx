@@ -1,9 +1,21 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring, useTransform, useInView } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, useInView, AnimatePresence } from "framer-motion";
 import { ArrowDown, MoveUpRight } from "lucide-react";
 import { stats } from "@/data/portfolio";
+
+const LOG_LINES = [
+  { level: "INFO", msg: 'tx=00e91a3d status=committed rows=1', color: "text-emerald-400" },
+  { level: "INFO", msg: 'cache HIT key=user:4821 ttl=58s', color: "text-sky-400" },
+  { level: "WARN", msg: 'retry attempt=2 tx=00f13c2a', color: "text-amber-400" },
+  { level: "INFO", msg: 'span payroll.calculate dur=12ms', color: "text-emerald-400" },
+  { level: "INFO", msg: 'tx=00e91b88 status=committed', color: "text-emerald-400" },
+  { level: "INFO", msg: 'cache MISS key=report:2025 fill=true', color: "text-zinc-400" },
+];
+
+const LATENCIES = ["0.1", "0.2", "0.3", "0.2", "0.4", "0.1", "0.2"];
+const TX_IDS = ["00e91a3d", "00f13c2a", "00e91b88", "00a7dc41"];
 
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const wordVariants = { hidden: { opacity: 0, y: 40 }, show: { opacity: 1, y: 0 } };
@@ -27,6 +39,12 @@ export function Hero() {
   const statsRef = useRef<HTMLDListElement>(null);
   const statsInView = useInView(statsRef, { once: true, margin: "-80px" });
   const [counts, setCounts] = useState(stats.map(() => 0));
+
+  // Live preview card state
+  const [txPhase, setTxPhase] = useState<"processing" | "committed">("committed");
+  const [txId, setTxId] = useState(0);
+  const [latencyIdx, setLatencyIdx] = useState(1);
+  const [logHead, setLogHead] = useState(0);
 
   useEffect(() => {
     if (!statsInView) return;
@@ -52,6 +70,20 @@ export function Hero() {
     });
     return () => timers.forEach(clearInterval);
   }, [statsInView]);
+
+  // Cycle live preview card data
+  useEffect(() => {
+    const txTimer = setInterval(() => {
+      setTxPhase("processing");
+      setTimeout(() => {
+        setTxPhase("committed");
+        setTxId((i) => (i + 1) % TX_IDS.length);
+      }, 1200);
+    }, 3500);
+    const latTimer = setInterval(() => setLatencyIdx((i) => (i + 1) % LATENCIES.length), 1800);
+    const logTimer = setInterval(() => setLogHead((i) => (i + 1) % LOG_LINES.length), 2200);
+    return () => { clearInterval(txTimer); clearInterval(latTimer); clearInterval(logTimer); };
+  }, []);
 
   return (
     <section
@@ -175,23 +207,76 @@ export function Hero() {
               <span className="mono ml-3 text-xs text-zinc-600">system.preview</span>
             </div>
             <div className="relative mt-4 flex-1 overflow-hidden rounded-b-[1.4rem] max-sm:flex max-sm:flex-col max-sm:gap-3 max-sm:p-3">
-              {/* Request card — amber tint */}
+              {/* Transaction card — amber tint, live cycling */}
               <div className="absolute inset-x-6 top-8 rounded-3xl border border-amber-500/50 bg-amber-900/30 p-5 max-sm:static max-sm:p-4 sm:inset-x-8 sm:top-10">
-                <p className="mono text-xs uppercase tracking-[0.2em] text-amber-400">transaction</p>
+                <div className="flex items-center justify-between">
+                  <p className="mono text-xs uppercase tracking-[0.2em] text-amber-400">transaction</p>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={txPhase}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.25 }}
+                      className={`mono flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-widest ${
+                        txPhase === "processing"
+                          ? "border border-amber-500/40 bg-amber-900/40 text-amber-300"
+                          : "border border-emerald-500/40 bg-emerald-900/30 text-emerald-300"
+                      }`}
+                    >
+                      {txPhase === "processing" ? (
+                        <><span className="inline-block size-1.5 rounded-full bg-amber-400 animate-pulse" />processing</>
+                      ) : (
+                        <><span className="inline-block size-1.5 rounded-full bg-emerald-400" />committed</>
+                      )}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
                 <p className="mt-3 text-xl font-semibold text-white sm:text-2xl">Distributed processing</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-300">
-                  Atomic, idempotent, retry-safe.
+                <p className="mono mt-2 text-[0.65rem] text-zinc-500">
+                  tx=<span className="text-amber-400/80">{TX_IDS[txId]}</span>
                 </p>
               </div>
-              {/* Cache card — emerald tint */}
+              {/* Cache card — emerald, live latency */}
               <div className="absolute left-6 top-44 w-44 rounded-3xl border border-emerald-500/40 bg-emerald-900/25 p-4 max-sm:static max-sm:w-full sm:left-8 sm:top-48">
-                <p className="mono text-xs text-emerald-400">cache · 0.2ms</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="mono text-xs text-emerald-400">cache ·</p>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={latencyIdx}
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      transition={{ duration: 0.2 }}
+                      className="mono text-xs text-emerald-300 font-semibold"
+                    >
+                      {LATENCIES[latencyIdx]}ms
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
                 <p className="mt-2 text-sm text-zinc-200">sub-ms reads, source-of-truth safe</p>
               </div>
-              {/* Observability card — sky tint */}
-              <div className="absolute bottom-8 right-6 w-52 rounded-3xl border border-sky-500/40 bg-sky-900/25 p-4 max-sm:static max-sm:w-full sm:bottom-12 sm:right-8">
+              {/* Observability card — sky, live log stream */}
+              <div className="absolute bottom-8 right-6 w-52 overflow-hidden rounded-3xl border border-sky-500/40 bg-sky-900/25 p-4 max-sm:static max-sm:w-full sm:bottom-12 sm:right-8">
                 <p className="mono text-xs text-sky-400">observability</p>
-                <p className="mt-2 text-sm text-zinc-200">trace IDs, structured logs, metrics</p>
+                <div className="mt-2 space-y-1 overflow-hidden">
+                  {[0, 1].map((offset) => {
+                    const line = LOG_LINES[(logHead + offset) % LOG_LINES.length];
+                    return (
+                      <AnimatePresence key={`${logHead}-${offset}`} mode="wait">
+                        <motion.p
+                          key={`${logHead}-${offset}`}
+                          initial={{ opacity: 0, x: 8 }}
+                          animate={{ opacity: offset === 0 ? 1 : 0.45 }}
+                          transition={{ duration: 0.3, delay: offset * 0.05 }}
+                          className={`mono truncate text-[0.58rem] leading-4 ${line.color}`}
+                        >
+                          <span className="text-zinc-600">{line.level} </span>{line.msg}
+                        </motion.p>
+                      </AnimatePresence>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
