@@ -273,7 +273,7 @@ function AnimatedVehicle({
   const isTrain  = v.vehicleType !== "motorcycle";
   // base travel time (seconds) — stations add STATION_DWELL_MS each
   const baseDur  = isTrain ? 4.0 : 1.8;
-  const stationCount = v.waypoints.filter(p => p.station).length;
+
 
   const gRef     = useRef<SVGGElement>(null);
   const innerRef = useRef<SVGGElement>(null);
@@ -333,7 +333,7 @@ function AnimatedVehicle({
       const y = pts[i].y + (pts[i+1].y - pts[i].y) * frac;
       const targetAngle = Math.atan2(pts[i+1].y - pts[i].y, pts[i+1].x - pts[i].x) * (180/Math.PI);
       // Smooth angle interpolation (shortest arc)
-      let da = ((targetAngle - currentAngle + 540) % 360) - 180;
+      const da = ((targetAngle - currentAngle + 540) % 360) - 180;
       currentAngle += da * 0.12;
       const op = raw < 0.06 ? raw/0.06 : raw > 0.94 ? (1-raw)/0.06 : 1;
 
