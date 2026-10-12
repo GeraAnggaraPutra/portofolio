@@ -2,7 +2,7 @@ import { About } from "@/components/about";
 import { BackgroundCanvas } from "@/components/background-canvas";
 import { Cursor } from "@/components/cursor";
 import { Contact } from "@/components/contact";
-import { ExperienceTimeline } from "@/components/experience";
+import { CareerMap } from "@/components/career-map";
 import { Footer } from "@/components/footer";
 import { Hero } from "@/components/hero";
 import { Navbar } from "@/components/navbar";
@@ -29,7 +29,7 @@ export default function Home() {
           <SystemFlow />
           <Projects />
           <ValueProps />
-          <ExperienceTimeline />
+          <CareerMap />
           <TechStack />
           <Education />
           <TechnicalNotes />
