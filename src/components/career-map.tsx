@@ -173,84 +173,82 @@ const WHOOSH_RAIL_D = "M 185,218 C 198,227 217,241 238,251 C 245,255 249,257 252
 
 /* ─── Vehicle icons ──────────────────────────────────────────── */
 
-// Regular kereta api — blue body, amber stripe, older style
+// All icons scaled to 0.5x — crisp at map scale, not oversize
+// Regular kereta api — blue body, orange stripe
 function TrainIcon() {
   return (
-    <g>
-      {/* steam/exhaust trail */}
-      <line x1="-24" y1="-3" x2="-42" y2="-3" stroke="rgba(200,200,200,0.35)" strokeWidth="1.2" strokeLinecap="round"/>
-      <line x1="-24" y1="0"  x2="-48" y2="0"  stroke="rgba(200,200,200,0.22)" strokeWidth="0.9" strokeLinecap="round"/>
-      <line x1="-24" y1="3"  x2="-40" y2="3"  stroke="rgba(200,200,200,0.12)" strokeWidth="0.7" strokeLinecap="round"/>
+    <g transform="scale(0.5)">
+      {/* exhaust trail */}
+      <line x1="-18" y1="-2" x2="-30" y2="-2" stroke="rgba(200,200,200,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="-18" y1="0"  x2="-34" y2="0"  stroke="rgba(200,200,200,0.25)" strokeWidth="1.1" strokeLinecap="round"/>
       {/* body */}
-      <rect x="-22" y="-5.5" width="38" height="11" rx="2" fill="#1e3a5f"/>
+      <rect x="-16" y="-5" width="30" height="10" rx="2" fill="#1e3a5f"/>
       {/* nose */}
-      <path d="M 16,-5.5 Q 28,-5.5 28,0 Q 28,5.5 16,5.5 Z" fill="#1d4ed8"/>
-      {/* center stripe */}
-      <rect x="-22" y="-1.5" width="50" height="3" fill="#e05c1a"/>
+      <path d="M 14,-5 Q 22,-5 22,0 Q 22,5 14,5 Z" fill="#1d4ed8"/>
+      {/* orange stripe */}
+      <rect x="-16" y="-1.5" width="38" height="3" fill="#e05c1a"/>
       {/* windows */}
-      <rect x="-14" y="-4" width="4" height="3.5" rx="0.5" fill="#bae6fd" opacity="0.5"/>
-      <rect x="-7"  y="-4" width="4" height="3.5" rx="0.5" fill="#bae6fd" opacity="0.5"/>
-      <rect x="0"   y="-4" width="4" height="3.5" rx="0.5" fill="#bae6fd" opacity="0.5"/>
-      <rect x="7"   y="-4" width="4" height="3.5" rx="0.5" fill="#bae6fd" opacity="0.5"/>
-      {/* undercarriage */}
-      <rect x="-20" y="5" width="28" height="2" fill="#0f172a"/>
-      <circle cx="-13" cy="7" r="2.5" fill="#4b5563"/>
-      <circle cx="7"   cy="7" r="2.5" fill="#4b5563"/>
+      <rect x="-10" y="-4" width="4" height="3" rx="0.5" fill="#bae6fd" opacity="0.6"/>
+      <rect x="-4"  y="-4" width="4" height="3" rx="0.5" fill="#bae6fd" opacity="0.6"/>
+      <rect x="2"   y="-4" width="4" height="3" rx="0.5" fill="#bae6fd" opacity="0.6"/>
+      {/* wheels */}
+      <circle cx="-8" cy="6.5" r="2.5" fill="#4b5563"/>
+      <circle cx="6"  cy="6.5" r="2.5" fill="#4b5563"/>
       {/* headlight */}
-      <circle cx="27" cy="0" r="1.5" fill="#fef3c7" opacity="0.85"/>
+      <circle cx="21" cy="0" r="1.5" fill="#fef3c7" opacity="0.9"/>
     </g>
   );
 }
 
-// Whoosh (KCJB) — sleek aerodynamic, silver/gold
+// Whoosh (KCJB) — sleek dark body, gold nose
 function WhooshIcon() {
   return (
-    <g>
+    <g transform="scale(0.5)">
       {/* slipstream */}
-      <line x1="-28" y1="-2.5" x2="-50" y2="-2.5" stroke="rgba(251,191,36,0.5)" strokeWidth="1.1" strokeLinecap="round"/>
-      <line x1="-28" y1="0"    x2="-56" y2="0"    stroke="rgba(251,191,36,0.3)" strokeWidth="0.9" strokeLinecap="round"/>
-      <line x1="-28" y1="2.5"  x2="-48" y2="2.5"  stroke="rgba(251,191,36,0.18)" strokeWidth="0.7" strokeLinecap="round"/>
-      {/* aero body — lower and wider */}
-      <rect x="-26" y="-4.5" width="42" height="9" rx="1.5" fill="#1c1c2e"/>
-      {/* aerodynamic nose — pointed */}
-      <path d="M 16,-4.5 L 34,0 L 16,4.5 Z" fill="#f59e0b"/>
-      {/* silver accent top */}
-      <rect x="-26" y="-4.5" width="44" height="2.5" fill="#9ca3af" opacity="0.25"/>
-      {/* gold mid stripe */}
-      <rect x="-26" y="-1" width="42" height="2" fill="#f59e0b"/>
-      {/* windows — flush, panoramic */}
-      <rect x="-20" y="-3.5" width="38" height="2.5" rx="0.3" fill="#0ea5e9" opacity="0.35"/>
-      {/* underframe */}
-      <rect x="-24" y="4.5" width="36" height="1.5" fill="#111827"/>
-      <circle cx="-15" cy="5.5" r="2" fill="#374151"/>
-      <circle cx="5"   cy="5.5" r="2" fill="#374151"/>
-      {/* speed stripe on nose */}
-      <path d="M 20,-4.5 L 34,0 L 20,4.5 L 22,0 Z" fill="#fbbf24"/>
+      <line x1="-20" y1="-2" x2="-38" y2="-2" stroke="rgba(251,191,36,0.55)" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="-20" y1="0"  x2="-42" y2="0"  stroke="rgba(251,191,36,0.35)" strokeWidth="0.9" strokeLinecap="round"/>
+      <line x1="-20" y1="2"  x2="-36" y2="2"  stroke="rgba(251,191,36,0.18)" strokeWidth="0.7" strokeLinecap="round"/>
+      {/* body */}
+      <rect x="-20" y="-4" width="34" height="8" rx="1.5" fill="#1c1c2e"/>
+      {/* pointed nose */}
+      <path d="M 14,-4 L 28,0 L 14,4 Z" fill="#f59e0b"/>
+      {/* gold stripe */}
+      <rect x="-20" y="-1" width="34" height="2" fill="#f59e0b"/>
+      {/* panoramic window */}
+      <rect x="-16" y="-3" width="28" height="2" rx="0.3" fill="#0ea5e9" opacity="0.4"/>
+      {/* wheels */}
+      <circle cx="-10" cy="5" r="2" fill="#374151"/>
+      <circle cx="4"   cy="5" r="2" fill="#374151"/>
       {/* headlight */}
-      <circle cx="33" cy="0" r="1.8" fill="#fef9c3" opacity="0.9"/>
-      <circle cx="33" cy="0" r="3" fill="rgba(254,249,195,0.2)"/>
+      <circle cx="27" cy="0" r="1.8" fill="#fef9c3" opacity="0.9"/>
     </g>
   );
 }
 
+// Motorcycle — simple clean shape
 function MotorcycleIcon() {
   return (
-    <g>
-      <line x1="-16" y1="-2" x2="-28" y2="-2" stroke="rgba(251,191,36,0.55)" strokeWidth="1.2" strokeLinecap="round"/>
-      <line x1="-16" y1="1"  x2="-32" y2="1"  stroke="rgba(251,191,36,0.35)" strokeWidth="0.9" strokeLinecap="round"/>
-      <line x1="-16" y1="4"  x2="-26" y2="4"  stroke="rgba(251,191,36,0.2)"  strokeWidth="0.7" strokeLinecap="round"/>
-      <circle cx="-9" cy="6" r="5.5" fill="none" stroke="#52525b" strokeWidth="2"/>
-      <circle cx="-9" cy="6" r="1.5" fill="#52525b"/>
-      <circle cx="10" cy="6" r="5.5" fill="none" stroke="#52525b" strokeWidth="2"/>
-      <circle cx="10" cy="6" r="1.5" fill="#52525b"/>
-      <path d="M -9,1 L -1,-6 L 7,-5 L 10,1" stroke="#d97706" strokeWidth="1.5" fill="none"/>
-      <path d="M -9,1 L -15,-1 L -4,-6 L -1,-6" fill="#b45309" stroke="#d97706" strokeWidth="0.8"/>
-      <rect x="-2" y="-2" width="10" height="5" rx="1" fill="#92400e"/>
-      <line x1="7" y1="-5" x2="10" y2="2" stroke="#d97706" strokeWidth="1.5"/>
-      <line x1="5" y1="-5" x2="10" y2="-5" stroke="#d97706" strokeWidth="1.5"/>
-      <rect x="-5" y="-11" width="8" height="6" rx="1.5" fill="#374151"/>
-      <circle cx="1" cy="-13" r="4" fill="#d4d4d8"/>
-      <path d="M -2,-16 Q 4,-16 5,-13" stroke="#374151" strokeWidth="1" fill="none"/>
+    <g transform="scale(0.5)">
+      {/* dust trail */}
+      <line x1="-10" y1="-1" x2="-20" y2="-1" stroke="rgba(251,191,36,0.5)" strokeWidth="1" strokeLinecap="round"/>
+      <line x1="-10" y1="2"  x2="-22" y2="2"  stroke="rgba(251,191,36,0.3)" strokeWidth="0.8" strokeLinecap="round"/>
+      {/* rear wheel */}
+      <circle cx="-8" cy="5" r="5" fill="none" stroke="#52525b" strokeWidth="2"/>
+      <circle cx="-8" cy="5" r="1.5" fill="#52525b"/>
+      {/* front wheel */}
+      <circle cx="10" cy="5" r="5" fill="none" stroke="#52525b" strokeWidth="2"/>
+      <circle cx="10" cy="5" r="1.5" fill="#52525b"/>
+      {/* frame */}
+      <path d="M -8,0 L 2,-5 L 10,0" stroke="#d97706" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M -8,0 L -12,-2 L -2,-5 L 2,-5" fill="#b45309" stroke="none"/>
+      {/* fuel tank */}
+      <rect x="-1" y="-3" width="9" height="4" rx="1.5" fill="#92400e"/>
+      {/* fork */}
+      <line x1="8" y1="-4" x2="10" y2="1" stroke="#d97706" strokeWidth="2" strokeLinecap="round"/>
+      {/* handlebar */}
+      <line x1="4" y1="-5" x2="10" y2="-5" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* rider helmet */}
+      <circle cx="0" cy="-9" r="4" fill="#d4d4d8"/>
     </g>
   );
 }
@@ -305,6 +303,7 @@ function AnimatedVehicle({
     let t0: number | null = null;
     let done = false;
     let smokePhase = 0;      // rotating smoke puff index
+    let currentAngle = 0;    // smoothly interpolated heading
 
     function tick(now: number) {
       if (done) return;
@@ -332,12 +331,15 @@ function AnimatedVehicle({
 
       const x = pts[i].x + (pts[i+1].x - pts[i].x) * frac;
       const y = pts[i].y + (pts[i+1].y - pts[i].y) * frac;
-      const angle = Math.atan2(pts[i+1].y - pts[i].y, pts[i+1].x - pts[i].x) * (180/Math.PI);
+      const targetAngle = Math.atan2(pts[i+1].y - pts[i].y, pts[i+1].x - pts[i].x) * (180/Math.PI);
+      // Smooth angle interpolation (shortest arc)
+      let da = ((targetAngle - currentAngle + 540) % 360) - 180;
+      currentAngle += da * 0.12;
       const op = raw < 0.06 ? raw/0.06 : raw > 0.94 ? (1-raw)/0.06 : 1;
 
       el!.setAttribute("transform", `translate(${x},${y})`);
       el!.setAttribute("opacity", op.toFixed(3));
-      inner!.setAttribute("transform", `rotate(${angle})`);
+      inner!.setAttribute("transform", `rotate(${currentAngle})`);
       onPosition(x, y);
 
       if (smoke && isTrain) renderSmoke(smoke, smokePhase, now, v.vehicleType === "whoosh");
@@ -493,9 +495,16 @@ export function CareerMap() {
     fmAnimate(mapX, target, { type: "spring", stiffness: 65, damping: 16 });
   }
 
-  function zoomIn(x: number, y: number, factor = 3.5) {
+  function clampVB(x: number, y: number, w: number, h: number): [number,number,number,number] {
+    // Keep viewBox inside map bounds
+    const cx = Math.max(0, Math.min(1200 - w, x));
+    const cy = Math.max(0, Math.min(430  - h, y));
+    return [cx, cy, w, h];
+  }
+
+  function zoomIn(x: number, y: number, factor = 3) {
     const zw = 1200 / factor, zh = 430 / factor;
-    targetVB.current = [x - zw/2, y - zh/2, zw, zh];
+    targetVB.current = clampVB(x - zw/2, y - zh/2, zw, zh);
   }
 
   function zoomOut() {
@@ -503,10 +512,18 @@ export function CareerMap() {
   }
 
   function handleVehiclePosition(x: number, y: number) {
-    // zoom in following the vehicle
-    const factor = 3.5;
+    const factor = 3;
     const zw = 1200 / factor, zh = 430 / factor;
-    targetVB.current = [x - zw/2, y - zh/2, zw, zh];
+    targetVB.current = clampVB(x - zw/2, y - zh/2, zw, zh);
+  }
+
+  function manualZoom(direction: 1 | -1) {
+    const [cx, cy, cw, ch] = currentVB.current;
+    const factor = direction === 1 ? 0.7 : 1.4; // zoom in shrinks window
+    const nw = Math.max(200, Math.min(1200, cw * factor));
+    const nh = Math.max(70,  Math.min(430,  ch * factor));
+    const mx = cx + cw/2, my = cy + ch/2;
+    targetVB.current = clampVB(mx - nw/2, my - nh/2, nw, nh);
   }
 
   function fireVehicle(fromId: string, toId: string) {
@@ -601,8 +618,9 @@ export function CareerMap() {
                 )}
               </motion.div>
               <div className={i === stops.length - 1 ? "text-right" : i === 0 ? "text-left" : "text-center"}>
-                <p className={`mono text-[0.58rem] uppercase tracking-[0.18em] ${isActive ? col.text : "text-zinc-600"} transition-colors`}>{stop.period.split(" ")[0]}</p>
+                <p className={`mono text-[0.55rem] uppercase tracking-[0.14em] ${isActive ? col.text : "text-zinc-600"} transition-colors`}>{stop.period}</p>
                 <p className={`text-[0.7rem] font-medium leading-tight ${isActive ? "text-white" : "text-zinc-600"} transition-colors group-hover:text-zinc-300`}>{stop.name.split(" ").slice(0, 2).join(" ")}</p>
+                <p className={`text-[0.6rem] leading-tight ${isActive ? "text-zinc-400" : "text-zinc-700"} transition-colors`}>{stop.city}</p>
               </div>
             </button>
           );
@@ -623,6 +641,19 @@ export function CareerMap() {
             {isPlaying ? <Square size={10} fill="currentColor"/> : <Play size={10} fill="currentColor"/>}
             <span className="mono tracking-[0.15em]">{isPlaying ? "STOP" : "PLAY JOURNEY"}</span>
           </button>
+
+          {/* Zoom controls */}
+          <div className="absolute left-4 top-4 z-10 flex flex-col gap-1">
+            <button onClick={() => manualZoom(1)}
+              className="grid size-7 place-items-center rounded-lg border border-white/[0.1] bg-black/40 text-zinc-400 text-sm font-bold backdrop-blur-sm transition hover:border-amber-500/30 hover:text-amber-400"
+            >+</button>
+            <button onClick={() => manualZoom(-1)}
+              className="grid size-7 place-items-center rounded-lg border border-white/[0.1] bg-black/40 text-zinc-400 text-sm font-bold backdrop-blur-sm transition hover:border-amber-500/30 hover:text-amber-400"
+            >−</button>
+            <button onClick={zoomOut}
+              className="grid size-7 place-items-center rounded-lg border border-white/[0.1] bg-black/40 text-zinc-400 text-[0.5rem] backdrop-blur-sm transition hover:border-amber-500/30 hover:text-amber-400 mono"
+            >FIT</button>
+          </div>
 
           {/* Hint */}
           <AnimatePresence>
