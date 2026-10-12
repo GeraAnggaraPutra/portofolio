@@ -276,7 +276,6 @@ function AnimatedVehicle({
   // base travel time (seconds) — stations add STATION_DWELL_MS each
   const baseDur  = isTrain ? 4.0 : 1.8;
   const stationCount = v.waypoints.filter(p => p.station).length;
-  const totalMs  = baseDur * 1000 + stationCount * STATION_DWELL_MS;
 
   const gRef     = useRef<SVGGElement>(null);
   const innerRef = useRef<SVGGElement>(null);
@@ -302,7 +301,7 @@ function AnimatedVehicle({
     let travelMs = 0;        // elapsed travel-only time
     let pausedMs = 0;        // accumulated dwell time
     let pauseUntil = 0;      // absolute now() when pause ends
-    let visitedStations = new Set<number>();
+    const visitedStations = new Set<number>();
     let t0: number | null = null;
     let done = false;
     let smokePhase = 0;      // rotating smoke puff index
