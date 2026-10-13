@@ -3,7 +3,7 @@ import { AmbientParticles } from "@/components/ambient-particles";
 import { BackgroundCanvas } from "@/components/background-canvas";
 import { Cursor } from "@/components/cursor";
 import { Contact } from "@/components/contact";
-import { CareerMap } from "@/components/career-map";
+import { CareerTimeline } from "@/components/career-timeline";
 import { Footer } from "@/components/footer";
 import { Hero } from "@/components/hero";
 import { Navbar } from "@/components/navbar";
@@ -31,7 +31,7 @@ export default function Home() {
           <SystemFlow />
           <Projects />
           <ValueProps />
-          <CareerMap />
+          <CareerTimeline />
           <TechStack />
           <Education />
           <TechnicalNotes />
