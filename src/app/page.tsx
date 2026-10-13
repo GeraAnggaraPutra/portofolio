@@ -1,4 +1,5 @@
 import { About } from "@/components/about";
+import { AmbientParticles } from "@/components/ambient-particles";
 import { BackgroundCanvas } from "@/components/background-canvas";
 import { Cursor } from "@/components/cursor";
 import { Contact } from "@/components/contact";
@@ -21,6 +22,7 @@ export default function Home() {
       <SmoothScroll />
       <Cursor />
       <BackgroundCanvas />
+      <AmbientParticles />
       <div className="relative" style={{ zIndex: 2 }}>
         <Navbar />
         <main>

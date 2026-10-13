@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ScrambleText } from "./scramble-text";
 
 type SectionHeaderProps = {
   eyebrow: string;
@@ -10,7 +11,7 @@ export function SectionHeader({ eyebrow, title, description }: SectionHeaderProp
   return (
     <div className="mb-10 max-w-3xl">
       <p className="mono mb-3 text-xs font-medium uppercase tracking-[0.24em] text-amber-400">
-        {eyebrow}
+        <ScrambleText text={eyebrow} />
       </p>
       <h2 className="text-balance text-3xl font-semibold leading-tight text-white sm:text-4xl">
         {title}
