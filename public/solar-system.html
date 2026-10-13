@@ -8,6 +8,13 @@
 body{background:radial-gradient(ellipse at 50% 45%,#101a30 0%,#050812 58%,#02040a 100%);overflow:hidden;font-family:system-ui,sans-serif}
 canvas{display:block;touch-action:none}
 body.compact canvas{touch-action:pan-y}
+#meteors{position:fixed;inset:0;z-index:2;overflow:hidden;pointer-events:none}
+.meteor{position:absolute;width:var(--length);height:2px;border-radius:999px;opacity:0;background:linear-gradient(90deg,transparent,rgba(136,192,255,.3) 42%,rgba(255,255,255,.95));filter:drop-shadow(0 0 5px rgba(137,185,255,.75));transform:translate3d(0,0,0) rotate(var(--angle));animation:meteor-flight var(--duration) linear var(--delay) infinite;will-change:transform,opacity}
+.meteor:nth-child(4n){height:1px;background:linear-gradient(90deg,transparent,rgba(255,186,107,.3) 44%,#ffe4b5);filter:drop-shadow(0 0 5px rgba(255,155,70,.65))}
+.meteor::after{content:"";position:absolute;right:0;top:50%;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 9px 3px rgba(173,207,255,.55);transform:translateY(-50%)}
+@keyframes meteor-flight{0%,2%{opacity:0;transform:translate3d(0,0,0) rotate(var(--angle))}8%{opacity:.9}48%{opacity:.9}60%,100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) rotate(var(--angle))}}
+body.scenefrozen .meteor{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){#meteors{display:none}}
 #tip{position:fixed;display:none;pointer-events:none;z-index:99;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 13px;max-width:240px}
 #tip b{color:#fff;font-size:12px;display:block;margin-bottom:2px}
 #tip span{color:#888;font-size:10px;letter-spacing:.04em}
@@ -21,6 +28,7 @@ body.compact canvas{touch-action:pan-y}
 </head>
 <body>
 <div id="tip"><b id="tip-n"></b><span id="tip-s"></span></div>
+<div id="meteors" aria-hidden="true"></div>
 
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
@@ -37,6 +45,26 @@ const CAREER=[
 const CM=Object.fromEntries(CAREER.map(c=>[c.planet,c]));
 const compact=window.matchMedia('(pointer: coarse), (max-width: 640px)').matches;
 if(compact)document.body.classList.add('compact');
+
+/* Lightweight CSS meteor trails keep the sky alive without extra WebGL draws. */
+const meteorLayer=document.getElementById('meteors');
+for(let i=0;i<(compact?18:28);i++){
+  const meteor=document.createElement('span');
+  const steep=i%4===0;
+  const dx=steep?80+Math.random()*180:260+Math.random()*430;
+  const dy=steep?240+Math.random()*300:110+Math.random()*270;
+  const duration=3.2+Math.random()*3.4;
+  meteor.className='meteor';
+  meteor.style.left=`${-18+Math.random()*110}%`;
+  meteor.style.top=`${-18+Math.random()*92}%`;
+  meteor.style.setProperty('--length',`${45+Math.random()*(compact?65:115)}px`);
+  meteor.style.setProperty('--dx',`${dx}px`);
+  meteor.style.setProperty('--dy',`${dy}px`);
+  meteor.style.setProperty('--angle',`${Math.atan2(dy,dx)*180/Math.PI}deg`);
+  meteor.style.setProperty('--duration',`${duration}s`);
+  meteor.style.setProperty('--delay',`${-Math.random()*duration}s`);
+  meteorLayer.appendChild(meteor);
+}
 
 const rr=(a,b)=>a+Math.random()*(b-a);
 function tex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);return new THREE.CanvasTexture(c)}
@@ -107,16 +135,26 @@ controls.zoomSpeed=0.9;controls.rotateSpeed=0.5;
 controls.minDistance=18;controls.maxDistance=1200;
 controls.autoRotate=false;
 controls.enableZoom=false;
+controls.enablePan=false;
 renderer.domElement.addEventListener('wheel',e=>{
   e.preventDefault();
   if(e.ctrlKey){
-    const distance=cam.position.clone().sub(controls.target);
-    distance.multiplyScalar(THREE.MathUtils.clamp(1+e.deltaY*.001, .8, 1.2));
-    cam.position.copy(controls.target).add(distance);
+    zoomScene(THREE.MathUtils.clamp(1+e.deltaY*.001,.8,1.2));
   }else{
     window.parent.postMessage({type:'career-scroll',deltaY:e.deltaY},window.location.origin);
   }
 },{passive:false});
+let pinchDistance=0;
+const getPinchDistance=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===2)pinchDistance=getPinchDistance(e.touches)},{passive:true});
+renderer.domElement.addEventListener('touchmove',e=>{
+  if(e.touches.length!==2)return;
+  e.preventDefault();
+  const nextDistance=getPinchDistance(e.touches);
+  if(pinchDistance>0)zoomScene(THREE.MathUtils.clamp(pinchDistance/nextDistance,.82,1.22));
+  pinchDistance=nextDistance;
+},{passive:false});
+renderer.domElement.addEventListener('touchend',e=>{if(e.touches.length<2)pinchDistance=0},{passive:true});
 
 let composer=null,bloom=null;
 if(!compact){
@@ -278,9 +316,18 @@ const careerMarkers=CAREER.map((career,index)=>{
   return{button,planet:planetMeshes.find(mesh=>mesh.userData.key===career.planet),key:career.planet};
 });
 
-function flyTo(position,target){
+function flyTo(position,target,duration=1200){
   if(reduceMotion.matches){cam.position.copy(position);controls.target.copy(target);cameraFlight=null;return}
-  cameraFlight={start:performance.now(),fromPos:cam.position.clone(),fromTarget:controls.target.clone(),toPos:position.clone(),toTarget:target.clone()};
+  cameraFlight={start:performance.now(),duration,fromPos:cam.position.clone(),fromTarget:controls.target.clone(),toPos:position.clone(),toTarget:target.clone()};
+}
+function zoomScene(factor,smooth=false){
+  if(!Number.isFinite(factor)||factor<=0)return;
+  const offset=cam.position.clone().sub(controls.target);
+  const minDistance=focusedPlanet?Math.max(12,focusedPlanet.userData.r*2.5):35;
+  const nextDistance=THREE.MathUtils.clamp(offset.length()*factor,minDistance,controls.maxDistance);
+  const nextPosition=controls.target.clone().add(offset.normalize().multiplyScalar(nextDistance));
+  if(smooth)flyTo(nextPosition,controls.target,320);
+  else{cameraFlight=null;cam.position.copy(nextPosition)}
 }
 function focusCareer(key,notifyParent=false){
   const marker=careerMarkers.find(item=>item.key===key);
@@ -303,8 +350,10 @@ window.addEventListener('message',event=>{
   if(event.source!==window.parent||event.origin!==window.location.origin)return;
   if(event.data?.type==='career-focus')focusCareer(event.data.planet);
   if(event.data?.type==='career-reset')resetView();
+  if(event.data?.type==='career-zoom')zoomScene(event.data.planet==='in'?.72:1.38,true);
   if(event.data?.type==='career-play')playing=event.data.planet==='on';
   if(event.data?.type==='career-visible')sceneVisible=Boolean(event.data.visible);
+  document.body.classList.toggle('scenefrozen',!playing||!sceneVisible);
 });
 controls.addEventListener('start',()=>{cameraFlight=null});
 
@@ -628,7 +677,7 @@ function animate(now=0){
   }
 
   if(cameraFlight){
-    const progress=Math.min(1,(performance.now()-cameraFlight.start)/1200);
+    const progress=Math.min(1,(performance.now()-cameraFlight.start)/cameraFlight.duration);
     const eased=1-Math.pow(1-progress,3);
     cam.position.lerpVectors(cameraFlight.fromPos,cameraFlight.toPos,eased);
     controls.target.lerpVectors(cameraFlight.fromTarget,cameraFlight.toTarget,eased);

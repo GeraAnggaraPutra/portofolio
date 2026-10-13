@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, Briefcase, GraduationCap, Maximize2, Pause, Play, X } from "lucide-react";
+import { ArrowUpRight, Briefcase, GraduationCap, Maximize2, Minimize2, Pause, Play, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { SectionHeader } from "./section-header";
 import { Reveal } from "./reveal";
 
@@ -128,7 +128,9 @@ function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => voi
 export function CareerTimeline() {
   const [selected, setSelected] = useState<number | null>(null);
   const [playing, setPlaying] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   const sendToScene = (type: string, planet?: string) => {
     frameRef.current?.contentWindow?.postMessage({ type, planet }, window.location.origin);
@@ -138,6 +140,25 @@ export function CareerTimeline() {
     setSelected(index);
     sendToScene("career-focus", stops[index].id);
     frameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const toggleFullscreen = async () => {
+    if (expanded) {
+      if (document.fullscreenElement === mapRef.current) await document.exitFullscreen();
+      setExpanded(false);
+      return;
+    }
+    if (window.matchMedia("(pointer: coarse), (max-width: 640px)").matches) {
+      setExpanded(true);
+      return;
+    }
+    try {
+      if (!mapRef.current?.requestFullscreen) throw new Error("Fullscreen API unavailable");
+      await mapRef.current.requestFullscreen();
+    } catch {
+      // iOS Safari and embedded browsers may not expose element fullscreen.
+    }
+    setExpanded(true);
   };
 
   // Receive postMessage from iframe when a career planet is clicked
@@ -156,6 +177,26 @@ export function CareerTimeline() {
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => setExpanded(document.fullscreenElement === mapRef.current);
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && document.fullscreenElement !== mapRef.current) setExpanded(false);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    window.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      window.removeEventListener("keydown", onEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [expanded]);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -198,29 +239,35 @@ export function CareerTimeline() {
         ))}
       </div>
 
-      <div className="relative overflow-hidden rounded-[2rem] border border-amber-200/10 bg-[#050912] shadow-[0_35px_120px_rgba(0,0,0,.45)]">
+      <div ref={mapRef} className={`overflow-hidden border border-amber-200/10 bg-[#050912] shadow-[0_35px_120px_rgba(0,0,0,.45)] ${expanded ? "fixed inset-0 z-[100] rounded-none" : "relative rounded-[2rem]"}`}>
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-36 bg-gradient-to-b from-[#030711]/95 via-[#030711]/60 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-gradient-to-t from-[#030711]/90 to-transparent" />
         <div className="pointer-events-none absolute left-5 top-5 z-20 sm:left-8 sm:top-7">
           <p className="mono text-[.6rem] uppercase tracking-[.3em] text-amber-300/70">Interactive career atlas</p>
           <p className="mt-1 max-w-[18rem] text-lg font-semibold leading-snug text-white sm:max-w-none sm:text-2xl">Explore the journey <span className="text-amber-300">among the stars.</span></p>
         </div>
-        <div className="absolute bottom-5 right-4 z-20 flex gap-2 sm:bottom-auto sm:right-7 sm:top-7">
-          <button type="button" onClick={() => { sendToScene("career-reset"); setSelected(null); }} aria-label="Show full solar system" title="Show full solar system" className="grid size-9 place-items-center rounded-full border border-white/15 bg-[#09111e]/85 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300"><Maximize2 size={15} /></button>
-          <button type="button" onClick={() => { sendToScene("career-play", !playing ? "on" : "off"); setPlaying(!playing); }} aria-label={playing ? "Pause animation" : "Resume animation"} title={playing ? "Pause animation" : "Resume animation"} className="grid size-9 place-items-center rounded-full border border-white/15 bg-[#09111e]/85 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300">{playing ? <Pause size={15} /> : <Play size={15} />}</button>
+        <div className="absolute bottom-4 left-4 z-20 flex gap-2 sm:bottom-7 sm:left-auto sm:right-7">
+          <button type="button" onClick={() => sendToScene("career-zoom", "in")} aria-label="Zoom in" title="Zoom in" className="grid size-10 place-items-center rounded-full border border-white/20 bg-[#09111e]/90 text-white backdrop-blur transition hover:border-amber-300/60 hover:bg-[#162439] focus-visible:outline-2 focus-visible:outline-amber-300"><ZoomIn size={18} /></button>
+          <button type="button" onClick={() => sendToScene("career-zoom", "out")} aria-label="Zoom out" title="Zoom out" className="grid size-10 place-items-center rounded-full border border-white/20 bg-[#09111e]/90 text-white backdrop-blur transition hover:border-amber-300/60 hover:bg-[#162439] focus-visible:outline-2 focus-visible:outline-amber-300"><ZoomOut size={18} /></button>
+        </div>
+        <div className="absolute bottom-4 right-4 z-20 flex gap-2 sm:bottom-auto sm:right-7 sm:top-7">
+          <button type="button" onClick={() => { sendToScene("career-reset"); setSelected(null); }} aria-label="Show full solar system" title="Show full solar system" className="grid size-10 place-items-center rounded-full border border-white/15 bg-[#09111e]/90 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300"><RotateCcw size={17} /></button>
+          <button type="button" onClick={() => { sendToScene("career-play", !playing ? "on" : "off"); setPlaying(!playing); }} aria-label={playing ? "Pause animation" : "Resume animation"} title={playing ? "Pause animation" : "Resume animation"} className="grid size-10 place-items-center rounded-full border border-white/15 bg-[#09111e]/90 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300">{playing ? <Pause size={17} /> : <Play size={17} />}</button>
+          <button type="button" onClick={toggleFullscreen} aria-label={expanded ? "Exit fullscreen" : "Open fullscreen"} title={expanded ? "Exit fullscreen" : "Open fullscreen"} className="grid size-10 place-items-center rounded-full border border-amber-300/35 bg-[#09111e]/90 text-amber-200 backdrop-blur transition hover:border-amber-300 hover:bg-[#162439] focus-visible:outline-2 focus-visible:outline-amber-300">{expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>
         </div>
         <iframe
           ref={frameRef}
           src="/solar-system.html"
-          className="h-[440px] w-full border-0 sm:h-[650px]"
+          className={expanded ? "h-full w-full border-0" : "h-[440px] w-full border-0 sm:h-[650px]"}
           title="Solar System Career Map"
           loading="lazy"
           onLoad={() => { if (selected !== null) sendToScene("career-focus", stops[selected].id); if (!playing) sendToScene("career-play", "off"); const rect = frameRef.current?.getBoundingClientRect(); if (rect) frameRef.current?.contentWindow?.postMessage({ type: "career-visible", visible: rect.bottom > 0 && rect.top < window.innerHeight }, window.location.origin); }}
         />
-        <div className="pointer-events-none absolute bottom-5 left-5 z-20 sm:bottom-7 sm:left-8">
-          <p className="mono text-[.6rem] uppercase tracking-[.2em] text-zinc-400">Drag to orbit <span className="mx-2 text-amber-300/60">·</span><span className="hidden sm:inline">Ctrl + scroll to zoom</span><span className="sm:hidden">Pick a chapter below</span></p>
+        <div className="pointer-events-none absolute bottom-7 left-8 z-20 hidden sm:block">
+          <p className="mono text-[.6rem] uppercase tracking-[.2em] text-zinc-400">Drag to orbit <span className="mx-2 text-amber-300/60">·</span> Ctrl + scroll to zoom</p>
         </div>
       </div>
+      <p className="mono mt-3 text-center text-[.62rem] uppercase tracking-[.16em] text-zinc-500 sm:hidden">Pinch or use + / − to zoom · Drag to orbit</p>
 
       {/* Career info card — driven by postMessage from iframe */}
       <AnimatePresence mode="wait">
