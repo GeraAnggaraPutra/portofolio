@@ -5,16 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;overflow:hidden;font-family:system-ui,sans-serif}
+body{background:radial-gradient(ellipse at 50% 45%,#101a30 0%,#050812 58%,#02040a 100%);overflow:hidden;font-family:system-ui,sans-serif}
+canvas{display:block;touch-action:none}
 #tip{position:fixed;display:none;pointer-events:none;z-index:99;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 13px;max-width:240px}
 #tip b{color:#fff;font-size:12px;display:block;margin-bottom:2px}
 #tip span{color:#888;font-size:10px;letter-spacing:.04em}
-#hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.2);font-size:10px;letter-spacing:.18em;text-transform:uppercase;pointer-events:none;white-space:nowrap}
+.career-marker{position:fixed;z-index:5;display:flex;align-items:center;gap:8px;transform:translate(-50%,-140%);padding:8px 11px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(5,10,22,.82);color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 24px var(--glow);backdrop-filter:blur(12px);font:600 11px/1.2 system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:border-color .2s,background .2s,scale .2s}
+.career-marker:hover,.career-marker:focus-visible,.career-marker.active{border-color:var(--accent);background:rgba(12,22,38,.96);scale:1.08;outline:none}
+.career-marker .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.career-marker small{font:500 9px/1.1 system-ui,sans-serif;color:#9caec5;text-transform:uppercase;letter-spacing:.12em}
+.career-marker .label{display:grid;gap:2px;text-align:left}
+@media(max-width:600px){.career-marker{padding:6px 8px;font-size:10px}.career-marker small{display:none}}
 </style>
 </head>
 <body>
 <div id="tip"><b id="tip-n"></b><span id="tip-s"></span></div>
-<div id="hint">Click career planet · Drag to orbit · Scroll to zoom</div>
 
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
@@ -87,7 +92,7 @@ function mkNebula(r,g,b,size,opacity){
 const scene=new THREE.Scene();
 let W=window.innerWidth,H=window.innerHeight;
 const cam=new THREE.PerspectiveCamera(52,W/H,.1,8000);
-cam.position.set(0,90,280);
+cam.position.set(0,220,850);
 
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
@@ -99,8 +104,19 @@ document.body.appendChild(renderer.domElement);
 const controls=new OrbitControls(cam,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=0.06;
 controls.zoomSpeed=0.9;controls.rotateSpeed=0.5;
-controls.minDistance=30;controls.maxDistance=700;
-controls.autoRotate=true;controls.autoRotateSpeed=0.18;
+controls.minDistance=18;controls.maxDistance=1200;
+controls.autoRotate=false;
+controls.enableZoom=false;
+renderer.domElement.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(e.ctrlKey){
+    const distance=cam.position.clone().sub(controls.target);
+    distance.multiplyScalar(THREE.MathUtils.clamp(1+e.deltaY*.001, .8, 1.2));
+    cam.position.copy(controls.target).add(distance);
+  }else{
+    window.parent.postMessage({type:'career-scroll',deltaY:e.deltaY},window.location.origin);
+  }
+},{passive:false});
 
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,cam));
@@ -209,7 +225,7 @@ PLANET_DATA.forEach(pd=>{
   const mat=new THREE.MeshPhongMaterial({map:TX[pd.key]?TX[pd.key]():null,shininess:pd.key==='earth'?70:22,specular:pd.key==='earth'?new THREE.Color(.04,.08,.28):new THREE.Color(.03,.03,.03)});
   if(career){mat.emissive=new THREE.Color(career.color);mat.emissiveIntensity=.07}
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(pd.r,seg,seg),mat);
-  mesh.rotation.z=pd.tilt;mesh.userData={...pd,career,phase:Math.random()*Math.PI*2};
+  mesh.rotation.z=pd.tilt;mesh.userData={...pd,career,phase:({earth:.55,jupiter:2.15,neptune:4.55})[pd.key]??Math.random()*Math.PI*2};
   const ac=career?new THREE.Color(career.color):(pd.key==='earth'?new THREE.Color(0x4488ff):new THREE.Color(0x224488));
   mesh.add(new THREE.Mesh(new THREE.SphereGeometry(pd.r*1.055,24,24),new THREE.MeshBasicMaterial({color:ac,transparent:true,opacity:career?.planet==='earth'?.12:.04,side:THREE.BackSide})));
   if(career){const h=new THREE.Mesh(new THREE.TorusGeometry(pd.r*1.7,.4,12,80),new THREE.MeshBasicMaterial({color:career.color,transparent:true,opacity:.55}));h.rotation.x=Math.PI/2;mesh.add(h);mesh.userData.halo=h}
@@ -234,6 +250,55 @@ PLANET_DATA.forEach(pd=>{
     scene.add(mm);moonData.push({mesh:mm,parent:mesh,dist:md.dist,speed:md.speed,phase:Math.random()*Math.PI*2,tilt:md.tilt||0,retro:md.retro||false});
   });
 });
+
+/* Career destinations stay readable even when the planets are small. */
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+let playing=!reduceMotion.matches;
+let sceneVisible=true;
+let focusedPlanet=null;
+let cameraFlight=null;
+const careerMarkers=CAREER.map((career,index)=>{
+  const button=document.createElement('button');
+  button.type='button';button.className='career-marker';
+  button.setAttribute('aria-label',`Explore ${career.name} career chapter`);
+  button.style.setProperty('--accent',career.color);
+  button.style.setProperty('--glow',`rgba(${career.glowRgb},.25)`);
+  button.innerHTML=`<span class="dot"></span><span class="label"><small>0${index+1} · ${career.planet}</small><span></span></span>`;
+  button.querySelector('.label span').textContent=career.name;
+  button.addEventListener('click',()=>focusCareer(career.planet,true));
+  document.body.appendChild(button);
+  return{button,planet:planetMeshes.find(mesh=>mesh.userData.key===career.planet),key:career.planet};
+});
+
+function flyTo(position,target){
+  if(reduceMotion.matches){cam.position.copy(position);controls.target.copy(target);cameraFlight=null;return}
+  cameraFlight={start:performance.now(),fromPos:cam.position.clone(),fromTarget:controls.target.clone(),toPos:position.clone(),toTarget:target.clone()};
+}
+function focusCareer(key,notifyParent=false){
+  const marker=careerMarkers.find(item=>item.key===key);
+  if(!marker)return;
+  focusedPlanet=marker.planet;
+  const planet=focusedPlanet;
+  const target=planet.position.clone();
+  const radius=planet.userData.r;
+  const offset=new THREE.Vector3(radius*.7,Math.max(15,radius*2.2),Math.max(34,radius*6));
+  flyTo(target.clone().add(offset),target);
+  careerMarkers.forEach(item=>item.button.classList.toggle('active',item.key===key));
+  if(notifyParent)window.parent.postMessage({type:'career-select',career:CM[key]},window.location.origin);
+}
+function resetView(){
+  focusedPlanet=null;
+  careerMarkers.forEach(item=>item.button.classList.remove('active'));
+  flyTo(new THREE.Vector3(0,220,850),new THREE.Vector3(0,0,0));
+}
+window.addEventListener('message',event=>{
+  if(event.source!==window.parent||event.origin!==window.location.origin)return;
+  if(event.data?.type==='career-focus')focusCareer(event.data.planet);
+  if(event.data?.type==='career-reset')resetView();
+  if(event.data?.type==='career-play')playing=event.data.planet==='on';
+  if(event.data?.type==='career-visible')sceneVisible=Boolean(event.data.visible);
+});
+controls.addEventListener('start',()=>{cameraFlight=null});
 
 /* ── Pulse rings for career planets ─────────────────────────── */
 const PULSES=[];let pulseTimer=0,nextPulse=3;
@@ -361,29 +426,34 @@ renderer.domElement.addEventListener('mousemove',e=>{
 renderer.domElement.addEventListener('click',e=>{
   mouse.x=(e.clientX/W)*2-1;mouse.y=-(e.clientY/H)*2+1;ray.setFromCamera(mouse,cam);
   const hits=ray.intersectObjects(planetMeshes);
-  if(hits.length&&hits[0].object.userData.career){const career=hits[0].object.userData.career;window.parent.postMessage({type:'career-select',career},'*');const m=hits[0].object;let sc=1,gr=true;const pulse=()=>{gr?(sc+=.025,sc>=1.15&&(gr=false)):(sc-=.018,sc<=1&&(m.scale.setScalar(1),null)===null?null:requestAnimationFrame(pulse));if(sc>1){m.scale.setScalar(sc);requestAnimationFrame(pulse)}};pulse()}
+  if(hits.length&&hits[0].object.userData.career)focusCareer(hits[0].object.userData.key,true);
 });
 
 /* ── Animate ─────────────────────────────────────────────────── */
 const clock=new THREE.Clock();
 const _dir=new THREE.Vector3();
+let simTime=0;
 
 function animate(){
   requestAnimationFrame(animate);
-  const dt=Math.min(clock.getDelta(),.033),t=clock.getElapsedTime();
+  const frameDt=Math.min(clock.getDelta(),.033);
+  if(document.hidden||!sceneVisible)return;
+  const dt=playing?frameDt:0;
+  simTime+=dt;
+  const t=simTime;
 
   sunMesh.rotation.y=t*.04;
 
   // Planets + halos
   planetMeshes.forEach(p=>{
     const{orbit,speed,phase}=p.userData;const a=t*speed*.28+phase;
-    p.position.x=Math.cos(a)*orbit;p.position.z=Math.sin(a)*orbit;
-    p.rotation.y+=.004+speed*.001;
+    if(!focusedPlanet){p.position.x=Math.cos(a)*orbit;p.position.z=Math.sin(a)*orbit}
+    p.rotation.y+=(.004+speed*.001)*dt*60;
     if(p.userData.halo)p.userData.halo.material.opacity=.32+.22*Math.sin(t*2);
   });
 
   // Earth cloud layer (rotates independently)
-  if(earthCloudMesh)earthCloudMesh.rotation.y+=.00065;
+  if(earthCloudMesh)earthCloudMesh.rotation.y+=.00065*dt*60;
 
   // Saturn ring sparkle twinkle
   if(saturnSparkMat)saturnSparkMat.opacity=.3+.7*Math.abs(Math.sin(t*2.4));
@@ -393,7 +463,7 @@ function animate(){
     const{mesh,parent,dist,speed,phase,tilt,retro}=md;const a=t*speed*.45*(retro?-1:1)+phase;
     const ct=Math.cos(tilt),st=Math.sin(tilt);
     mesh.position.set(parent.position.x+Math.cos(a)*dist,parent.position.y+Math.sin(a)*dist*st,parent.position.z+Math.sin(a)*dist*ct);
-    mesh.rotation.y+=.008;
+    mesh.rotation.y+=.008*dt*60;
   });
 
   // Space station orbits Earth
@@ -540,7 +610,21 @@ function animate(){
     if(E.life>E.maxLife){scene.remove(E.mesh);EXPLOSIONS.splice(i,1)}
   }
 
+  if(cameraFlight){
+    const progress=Math.min(1,(performance.now()-cameraFlight.start)/1200);
+    const eased=1-Math.pow(1-progress,3);
+    cam.position.lerpVectors(cameraFlight.fromPos,cameraFlight.toPos,eased);
+    controls.target.lerpVectors(cameraFlight.fromTarget,cameraFlight.toTarget,eased);
+    if(progress>=1)cameraFlight=null;
+  }
   controls.update();composer.render();
+  careerMarkers.forEach(({button,planet})=>{
+    const projected=planet.position.clone().project(cam);
+    const x=(projected.x*.5+.5)*W,y=(-projected.y*.5+.5)*H;
+    const visible=projected.z>-1&&projected.z<1&&x>72&&x<W-72&&y>135&&y<H-54;
+    button.style.display=visible?'flex':'none';
+    if(visible){button.style.left=`${x}px`;button.style.top=`${y}px`}
+  });
 }
 animate();
 

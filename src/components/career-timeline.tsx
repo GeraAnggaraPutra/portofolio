@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, GraduationCap, X } from "lucide-react";
+import { ArrowUpRight, Briefcase, GraduationCap, Maximize2, Pause, Play, X } from "lucide-react";
 import { SectionHeader } from "./section-header";
 import { Reveal } from "./reveal";
 
@@ -98,7 +98,7 @@ function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => voi
               <p className="text-sm font-medium" style={{ color: stop.color }}>{stop.role}</p>
             </div>
           </div>
-          <button onClick={onClose} className="shrink-0 rounded-full p-1.5 text-zinc-600 transition hover:bg-white/10 hover:text-white">
+          <button onClick={onClose} aria-label="Close career details" className="shrink-0 rounded-full p-1.5 text-zinc-600 transition hover:bg-white/10 hover:text-white">
             <X size={16} />
           </button>
         </div>
@@ -127,17 +127,51 @@ function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => voi
 /* ─── Main ───────────────────────────────────────────────────── */
 export function CareerTimeline() {
   const [selected, setSelected] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(true);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  const sendToScene = (type: string, planet?: string) => {
+    frameRef.current?.contentWindow?.postMessage({ type, planet }, window.location.origin);
+  };
+
+  const selectStop = (index: number) => {
+    setSelected(index);
+    sendToScene("career-focus", stops[index].id);
+    frameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   // Receive postMessage from iframe when a career planet is clicked
   useEffect(() => {
     const handler = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.source !== frameRef.current?.contentWindow) return;
+      if (e.data?.type === "career-scroll" && typeof e.data.deltaY === "number") {
+        window.scrollBy({ top: Math.max(-1200, Math.min(1200, e.data.deltaY)), behavior: "instant" });
+        return;
+      }
       if (e.data?.type !== "career-select") return;
       const career = e.data.career as { name: string };
       const idx = stops.findIndex(s => s.name === career.name);
-      if (idx >= 0) setSelected(prev => prev === idx ? null : idx);
+      if (idx >= 0) setSelected(idx);
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPlaying(false);
+      sendToScene("career-play", "off");
+    }
+  }, []);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      frame.contentWindow?.postMessage({ type: "career-visible", visible: entry.isIntersecting }, window.location.origin);
+    }, { threshold: 0.01 });
+    observer.observe(frame);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -146,7 +180,7 @@ export function CareerTimeline() {
         <SectionHeader
           eyebrow="Experience"
           title="Where I grew my craft"
-          description="Three chapters in a solar system of eight — school, startup, and scale. Click a glowing planet to explore."
+          description="A journey from first lines of code to production systems. Pick a chapter, then drag the universe around you."
         />
       </Reveal>
 
@@ -164,14 +198,28 @@ export function CareerTimeline() {
         ))}
       </div>
 
-      {/* Three.js solar system — loaded via iframe so Three.js comes from CDN */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/5">
+      <div className="relative overflow-hidden rounded-[2rem] border border-amber-200/10 bg-[#050912] shadow-[0_35px_120px_rgba(0,0,0,.45)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-36 bg-gradient-to-b from-[#030711]/95 via-[#030711]/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-gradient-to-t from-[#030711]/90 to-transparent" />
+        <div className="pointer-events-none absolute left-5 top-5 z-20 sm:left-8 sm:top-7">
+          <p className="mono text-[.6rem] uppercase tracking-[.3em] text-amber-300/70">Interactive career atlas</p>
+          <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">Explore the journey <span className="text-amber-300">among the stars.</span></p>
+        </div>
+        <div className="absolute bottom-5 right-4 z-20 flex gap-2 sm:bottom-auto sm:right-7 sm:top-7">
+          <button type="button" onClick={() => { sendToScene("career-reset"); setSelected(null); }} aria-label="Show full solar system" title="Show full solar system" className="grid size-9 place-items-center rounded-full border border-white/15 bg-[#09111e]/85 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300"><Maximize2 size={15} /></button>
+          <button type="button" onClick={() => { sendToScene("career-play", !playing ? "on" : "off"); setPlaying(!playing); }} aria-label={playing ? "Pause animation" : "Resume animation"} title={playing ? "Pause animation" : "Resume animation"} className="grid size-9 place-items-center rounded-full border border-white/15 bg-[#09111e]/85 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300">{playing ? <Pause size={15} /> : <Play size={15} />}</button>
+        </div>
         <iframe
+          ref={frameRef}
           src="/solar-system.html"
-          className="h-[480px] w-full border-0 sm:h-[600px]"
+          className="h-[560px] w-full border-0 sm:h-[650px]"
           title="Solar System Career Map"
           loading="lazy"
+          onLoad={() => { if (selected !== null) sendToScene("career-focus", stops[selected].id); if (!playing) sendToScene("career-play", "off"); const rect = frameRef.current?.getBoundingClientRect(); if (rect) frameRef.current?.contentWindow?.postMessage({ type: "career-visible", visible: rect.bottom > 0 && rect.top < window.innerHeight }, window.location.origin); }}
         />
+        <div className="pointer-events-none absolute bottom-5 left-5 z-20 sm:bottom-7 sm:left-8">
+          <p className="mono text-[.6rem] uppercase tracking-[.2em] text-zinc-400">Drag to orbit <span className="mx-2 text-amber-300/60">·</span><span className="hidden sm:inline">Ctrl + scroll to zoom</span><span className="sm:hidden">Pick a chapter below</span></p>
+        </div>
       </div>
 
       {/* Career info card — driven by postMessage from iframe */}
@@ -181,20 +229,21 @@ export function CareerTimeline() {
         )}
       </AnimatePresence>
 
-      {/* Legend */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+      <div className="mt-5 grid gap-3 md:grid-cols-3" aria-label="Career chapters">
         {stops.map((stop, i) => (
           <button key={stop.id}
-            onClick={() => setSelected(prev => prev === i ? null : i)}
-            className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-all duration-200"
+            type="button"
+            onClick={() => selectStop(i)}
+            aria-pressed={selected === i}
+            className="group flex items-center gap-3 rounded-2xl border px-4 py-4 text-left transition-all duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-amber-300"
             style={{
               borderColor: selected === i ? `rgba(${stop.glowRgb},.5)` : `rgba(255,255,255,.07)`,
-              background: selected === i ? `rgba(${stop.glowRgb},.1)` : "transparent",
-              color: selected === i ? stop.color : "#71717a",
+              background: selected === i ? `rgba(${stop.glowRgb},.1)` : "rgba(255,255,255,.025)",
             }}
           >
-            <span className="h-2 w-2 rounded-full" style={{ background: stop.color, boxShadow: `0 0 6px ${stop.color}` }} />
-            {stop.name}
+            <span className="grid size-10 shrink-0 place-items-center rounded-full border" style={{ color: stop.color, borderColor: `rgba(${stop.glowRgb},.45)`, background: `rgba(${stop.glowRgb},.12)` }}>{i + 1}</span>
+            <span className="min-w-0 flex-1"><span className="mono block text-[.6rem] uppercase tracking-[.16em] text-zinc-500">{stop.period}</span><span className="mt-1 block truncate text-sm font-medium text-white">{stop.name}</span></span>
+            <ArrowUpRight size={16} className="shrink-0 text-zinc-600 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
           </button>
         ))}
       </div>
