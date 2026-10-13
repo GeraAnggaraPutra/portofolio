@@ -203,7 +203,7 @@ export function CareerTimeline() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-gradient-to-t from-[#030711]/90 to-transparent" />
         <div className="pointer-events-none absolute left-5 top-5 z-20 sm:left-8 sm:top-7">
           <p className="mono text-[.6rem] uppercase tracking-[.3em] text-amber-300/70">Interactive career atlas</p>
-          <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">Explore the journey <span className="text-amber-300">among the stars.</span></p>
+          <p className="mt-1 max-w-[18rem] text-lg font-semibold leading-snug text-white sm:max-w-none sm:text-2xl">Explore the journey <span className="text-amber-300">among the stars.</span></p>
         </div>
         <div className="absolute bottom-5 right-4 z-20 flex gap-2 sm:bottom-auto sm:right-7 sm:top-7">
           <button type="button" onClick={() => { sendToScene("career-reset"); setSelected(null); }} aria-label="Show full solar system" title="Show full solar system" className="grid size-9 place-items-center rounded-full border border-white/15 bg-[#09111e]/85 text-zinc-200 backdrop-blur transition hover:border-amber-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-300"><Maximize2 size={15} /></button>
@@ -212,7 +212,7 @@ export function CareerTimeline() {
         <iframe
           ref={frameRef}
           src="/solar-system.html"
-          className="h-[560px] w-full border-0 sm:h-[650px]"
+          className="h-[440px] w-full border-0 sm:h-[650px]"
           title="Solar System Career Map"
           loading="lazy"
           onLoad={() => { if (selected !== null) sendToScene("career-focus", stops[selected].id); if (!playing) sendToScene("career-play", "off"); const rect = frameRef.current?.getBoundingClientRect(); if (rect) frameRef.current?.contentWindow?.postMessage({ type: "career-visible", visible: rect.bottom > 0 && rect.top < window.innerHeight }, window.location.origin); }}

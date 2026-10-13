@@ -94,6 +94,7 @@ export function BackgroundCanvas() {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const compact = window.matchMedia("(pointer: coarse), (max-width: 640px)").matches;
 
     let W = window.innerWidth;
     let H = window.innerHeight;
@@ -135,8 +136,11 @@ export function BackgroundCanvas() {
       y: offsetY + (col + row) * (TH / 2),
     });
 
-    const ticker = gsap.ticker.add(() => {
-      time += 0.012;
+    let lastDraw = 0;
+    const ticker = gsap.ticker.add((elapsed) => {
+      if (compact && elapsed - lastDraw < 1 / 24) return;
+      lastDraw = elapsed;
+      time += compact ? 0.018 : 0.012;
       ctx.clearRect(0, 0, W, H);
 
       for (const box of boxes) {

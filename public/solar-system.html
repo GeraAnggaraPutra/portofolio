@@ -7,6 +7,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:radial-gradient(ellipse at 50% 45%,#101a30 0%,#050812 58%,#02040a 100%);overflow:hidden;font-family:system-ui,sans-serif}
 canvas{display:block;touch-action:none}
+body.compact canvas{touch-action:pan-y}
 #tip{position:fixed;display:none;pointer-events:none;z-index:99;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 13px;max-width:240px}
 #tip b{color:#fff;font-size:12px;display:block;margin-bottom:2px}
 #tip span{color:#888;font-size:10px;letter-spacing:.04em}
@@ -15,7 +16,7 @@ canvas{display:block;touch-action:none}
 .career-marker .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .career-marker small{font:500 9px/1.1 system-ui,sans-serif;color:#9caec5;text-transform:uppercase;letter-spacing:.12em}
 .career-marker .label{display:grid;gap:2px;text-align:left}
-@media(max-width:600px){.career-marker{padding:6px 8px;font-size:10px}.career-marker small{display:none}}
+@media(max-width:600px){.career-marker{padding:7px 9px}.career-marker small{color:#e5e7eb;font-size:9px}.career-marker .label>span{display:none}}
 </style>
 </head>
 <body>
@@ -27,9 +28,6 @@ canvas{display:block;touch-action:none}
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const CAREER=[
   {planet:'earth',   name:'SMK Assalaam Bandung',          role:'Rekayasa Perangkat Lunak',               period:'Jun 2020–Jun 2023', city:'Bandung',color:'#34d399',glowRgb:'52,211,153'},
@@ -37,6 +35,8 @@ const CAREER=[
   {planet:'neptune', name:'PT Nusapala Berkah Autonomous', role:'Backend Developer',                      period:'Jul 2025–Present',  city:'Jakarta',color:'#f59e0b',glowRgb:'245,158,11'},
 ];
 const CM=Object.fromEntries(CAREER.map(c=>[c.planet,c]));
+const compact=window.matchMedia('(pointer: coarse), (max-width: 640px)').matches;
+if(compact)document.body.classList.add('compact');
 
 const rr=(a,b)=>a+Math.random()*(b-a);
 function tex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);return new THREE.CanvasTexture(c)}
@@ -94,8 +94,8 @@ let W=window.innerWidth,H=window.innerHeight;
 const cam=new THREE.PerspectiveCamera(52,W/H,.1,8000);
 cam.position.set(0,220,850);
 
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+const renderer=new THREE.WebGLRenderer({antialias:!compact,powerPreference:compact?'low-power':'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1:1.5));
 renderer.setSize(W,H);
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.1;
@@ -118,10 +118,17 @@ renderer.domElement.addEventListener('wheel',e=>{
   }
 },{passive:false});
 
-const composer=new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene,cam));
-const bloom=new UnrealBloomPass(new THREE.Vector2(W*.5,H*.5),1.3,.55,.72);
-composer.addPass(bloom);
+let composer=null,bloom=null;
+if(!compact){
+  const [{EffectComposer},{RenderPass},{UnrealBloomPass}]=await Promise.all([
+    import('three/addons/postprocessing/EffectComposer.js'),
+    import('three/addons/postprocessing/RenderPass.js'),
+    import('three/addons/postprocessing/UnrealBloomPass.js'),
+  ]);
+  composer=new EffectComposer(renderer);
+  bloom=new UnrealBloomPass(new THREE.Vector2(W*.5,H*.5),1.3,.55,.72);
+  composer.addPass(new RenderPass(scene,cam));composer.addPass(bloom);
+}
 
 /* ── Nebulae (tracked for pulse animation) ───────────────────── */
 const NEBULAE=[];
@@ -131,14 +138,14 @@ const NEBULAE=[];
 });
 
 /* ── Stars ───────────────────────────────────────────────────── */
-const starN=8000;
+const starN=compact?2600:8000;
 const sPos=new Float32Array(starN*3),sCol=new Float32Array(starN*3);
 for(let i=0;i<starN;i++){const rv=700+Math.random()*2000,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);sPos[i*3]=rv*Math.sin(ph)*Math.cos(th);sPos[i*3+1]=rv*Math.sin(ph)*Math.sin(th);sPos[i*3+2]=rv*Math.cos(ph);const t=Math.random();sCol[i*3]=t<.15?.7:1;sCol[i*3+1]=t>.8?.7:1;sCol[i*3+2]=t>.5?1:.9}
 const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sPos,3));sg.setAttribute('color',new THREE.BufferAttribute(sCol,3));
 scene.add(new THREE.Points(sg,new THREE.PointsMaterial({size:.65,vertexColors:true,sizeAttenuation:true})));
 
 /* ── Twinkling bright star layer ─────────────────────────────── */
-const TW_N=450;const twPos=new Float32Array(TW_N*3);
+const TW_N=compact?120:450;const twPos=new Float32Array(TW_N*3);
 for(let i=0;i<TW_N;i++){const rv=650+Math.random()*1800,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);twPos[i*3]=rv*Math.sin(ph)*Math.cos(th);twPos[i*3+1]=rv*Math.sin(ph)*Math.sin(th);twPos[i*3+2]=rv*Math.cos(ph)}
 const twGeo=new THREE.BufferGeometry();twGeo.setAttribute('position',new THREE.BufferAttribute(twPos,3));
 const twMat=new THREE.PointsMaterial({color:0xffffff,size:1.5,transparent:true,opacity:.7,sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -162,10 +169,10 @@ function ang2v(az,alt,r=670){const a=az*Math.PI/180,b=alt*Math.PI/180;return new
 });
 
 /* ── Aurora borealis (6 animated sine-wave curtains) ─────────── */
-const AURORA_PTS=55,AURORA_R=670;
+const AURORA_PTS=compact?28:55,AURORA_R=670;
 const auCol=new THREE.Color();
-const AURORAS=Array.from({length:6},(_,i)=>{
-  const phi=(i/6)*Math.PI*2;
+const AURORAS=Array.from({length:compact?2:6},(_,i)=>{
+  const phi=(i/(compact?2:6))*Math.PI*2;
   const pos=new Float32Array(AURORA_PTS*3),col=new Float32Array(AURORA_PTS*3);
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
@@ -184,6 +191,7 @@ const cG=new THREE.BufferGeometry();cG.setAttribute('position',new THREE.BufferA
 scene.add(new THREE.Points(cG,new THREE.PointsMaterial({color:0xffdd44,size:.3,transparent:true,opacity:.6})));
 scene.add(Object.assign(new THREE.PointLight(0xfff5cc,5,3000,1.1)));
 scene.add(new THREE.AmbientLight(0x111133,.7));
+if(compact)scene.add(new THREE.HemisphereLight(0xc7d9ff,0x3b271d,1.15));
 
 /* ── Solar flares ────────────────────────────────────────────── */
 const FLARES=[];let nextFlare=4;
@@ -221,7 +229,7 @@ PLANET_DATA.forEach(pd=>{
   const career=CM[pd.key];
   const oP=[];for(let j=0;j<=100;j++){const a=(j/100)*Math.PI*2;oP.push(new THREE.Vector3(Math.cos(a)*pd.orbit,0,Math.sin(a)*pd.orbit))}
   scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(oP),new THREE.LineBasicMaterial({color:0x1a1a3a,transparent:true,opacity:.45})));
-  const seg=pd.r>5?48:32;
+  const seg=compact?24:(pd.r>5?48:32);
   const mat=new THREE.MeshPhongMaterial({map:TX[pd.key]?TX[pd.key]():null,shininess:pd.key==='earth'?70:22,specular:pd.key==='earth'?new THREE.Color(.04,.08,.28):new THREE.Color(.03,.03,.03)});
   if(career){mat.emissive=new THREE.Color(career.color);mat.emissiveIntensity=.07}
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(pd.r,seg,seg),mat);
@@ -236,7 +244,7 @@ PLANET_DATA.forEach(pd=>{
     mesh.add(cloudM);earthCloudMesh=cloudM;
   }
   if(pd.key==='saturn'){
-    const sN=500;const spkPos=new Float32Array(sN*3);
+    const sN=compact?160:500;const spkPos=new Float32Array(sN*3);
     for(let i=0;i<sN;i++){const r=rr(pd.ringInner+.5,pd.ringOuter-.5),a=Math.random()*Math.PI*2;spkPos[i*3]=Math.cos(a)*r;spkPos[i*3+1]=rr(-.12,.12);spkPos[i*3+2]=Math.sin(a)*r}
     const spkG=new THREE.BufferGeometry();spkG.setAttribute('position',new THREE.BufferAttribute(spkPos,3));
     saturnSparkMat=new THREE.PointsMaterial({color:0xffffee,size:.22,transparent:true,opacity:1,sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -246,7 +254,7 @@ PLANET_DATA.forEach(pd=>{
   scene.add(mesh);planetMeshes.push(mesh);
   (pd.moons||[]).forEach(md=>{
     const mmat=TX[md.txk]||TX.moon;
-    const mm=new THREE.Mesh(new THREE.SphereGeometry(md.r,16,16),new THREE.MeshPhongMaterial({map:mmat(),shininess:10}));
+    const mm=new THREE.Mesh(new THREE.SphereGeometry(md.r,compact?10:16,compact?10:16),new THREE.MeshPhongMaterial({map:mmat(),shininess:10}));
     scene.add(mm);moonData.push({mesh:mm,parent:mesh,dist:md.dist,speed:md.speed,phase:Math.random()*Math.PI*2,tilt:md.tilt||0,retro:md.retro||false});
   });
 });
@@ -310,10 +318,10 @@ function spawnPulse(planet){
 }
 
 /* ── Asteroid belt ───────────────────────────────────────────── */
-{const N=800,aP=new Float32Array(N*3),aC=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,rv=133+rr(-13,13),y=rr(-4,4);aP[i*3]=Math.cos(a)*rv;aP[i*3+1]=y;aP[i*3+2]=Math.sin(a)*rv;const br=rr(.55,.85);aC[i*3]=br*.95;aC[i*3+1]=br*.9;aC[i*3+2]=br*.8}const ag=new THREE.BufferGeometry();ag.setAttribute('position',new THREE.BufferAttribute(aP,3));ag.setAttribute('color',new THREE.BufferAttribute(aC,3));scene.add(new THREE.Points(ag,new THREE.PointsMaterial({size:.7,vertexColors:true,sizeAttenuation:true})))}
+{const N=compact?280:800,aP=new Float32Array(N*3),aC=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,rv=133+rr(-13,13),y=rr(-4,4);aP[i*3]=Math.cos(a)*rv;aP[i*3+1]=y;aP[i*3+2]=Math.sin(a)*rv;const br=rr(.55,.85);aC[i*3]=br*.95;aC[i*3+1]=br*.9;aC[i*3+2]=br*.8}const ag=new THREE.BufferGeometry();ag.setAttribute('position',new THREE.BufferAttribute(aP,3));ag.setAttribute('color',new THREE.BufferAttribute(aC,3));scene.add(new THREE.Points(ag,new THREE.PointsMaterial({size:.7,vertexColors:true,sizeAttenuation:true})))}
 
 /* ── Kuiper belt ─────────────────────────────────────────────── */
-{const N=400,kP=new Float32Array(N*3),kC=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,rv=320+rr(-20,30),y=rr(-9,9);kP[i*3]=Math.cos(a)*rv;kP[i*3+1]=y;kP[i*3+2]=Math.sin(a)*rv;const br=rr(.28,.5);kC[i*3]=br*.8;kC[i*3+1]=br*.85;kC[i*3+2]=br}const kg=new THREE.BufferGeometry();kg.setAttribute('position',new THREE.BufferAttribute(kP,3));kg.setAttribute('color',new THREE.BufferAttribute(kC,3));scene.add(new THREE.Points(kg,new THREE.PointsMaterial({size:.6,vertexColors:true,sizeAttenuation:true,transparent:true,opacity:.65})))}
+{const N=compact?130:400,kP=new Float32Array(N*3),kC=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,rv=320+rr(-20,30),y=rr(-9,9);kP[i*3]=Math.cos(a)*rv;kP[i*3+1]=y;kP[i*3+2]=Math.sin(a)*rv;const br=rr(.28,.5);kC[i*3]=br*.8;kC[i*3+1]=br*.85;kC[i*3+2]=br}const kg=new THREE.BufferGeometry();kg.setAttribute('position',new THREE.BufferAttribute(kP,3));kg.setAttribute('color',new THREE.BufferAttribute(kC,3));scene.add(new THREE.Points(kg,new THREE.PointsMaterial({size:.6,vertexColors:true,sizeAttenuation:true,transparent:true,opacity:.65})))}
 
 /* ── Comet ───────────────────────────────────────────────────── */
 const cometG=new THREE.Group();
@@ -384,8 +392,10 @@ for(let i=0;i<4;i++){const fin=new THREE.Mesh(new THREE.BoxGeometry(.15,2.5,1.6)
 const rEngL=new THREE.PointLight(0xff6600,4,16);rEngL.position.y=-5;rocketG.add(rEngL);
 const TRAIL_N=80;const trailPos=new Float32Array(TRAIL_N*3);
 const trailGeo=new THREE.BufferGeometry();trailGeo.setAttribute('position',new THREE.BufferAttribute(trailPos,3));
-scene.add(new THREE.Points(trailGeo,new THREE.PointsMaterial({color:0xff8800,size:.85,transparent:true,opacity:.65,sizeAttenuation:true})));
+const rocketTrail=new THREE.Points(trailGeo,new THREE.PointsMaterial({color:0xff8800,size:.85,transparent:true,opacity:.65,sizeAttenuation:true}));
+rocketTrail.visible=!compact;scene.add(rocketTrail);
 scene.add(rocketG);let trailIdx=0,rAngle=0;
+rocketG.visible=!compact;
 
 /* ── Alien UFO ───────────────────────────────────────────────── */
 const ufoG=new THREE.Group();
@@ -394,6 +404,7 @@ const ufoDome=new THREE.Mesh(new THREE.SphereGeometry(2.8,20,14,0,Math.PI*2,0,Ma
 const rimGlow=new THREE.Mesh(new THREE.TorusGeometry(5.2,.5,8,56),new THREE.MeshBasicMaterial({color:0x00ff88,transparent:true,opacity:.85}));rimGlow.rotation.x=Math.PI/2;ufoG.add(rimGlow);
 const ufoBeam=new THREE.Mesh(new THREE.ConeGeometry(3.5,10,14,1,true),new THREE.MeshBasicMaterial({color:0x44ffaa,transparent:true,opacity:.15,side:THREE.DoubleSide}));ufoBeam.rotation.x=Math.PI;ufoBeam.position.y=-2;ufoG.add(ufoBeam);
 ufoG.add(new THREE.PointLight(0x00ff88,5,28));ufoG.position.set(200,30,80);scene.add(ufoG);
+ufoG.visible=!compact;
 const ufoVel=new THREE.Vector3();let ufoWob=0,bPhase='chase',bPhaseT=0;
 
 /* ── Battle system ───────────────────────────────────────────── */
@@ -433,9 +444,12 @@ renderer.domElement.addEventListener('click',e=>{
 const clock=new THREE.Clock();
 const _dir=new THREE.Vector3();
 let simTime=0;
+let lastFrame=0;
 
-function animate(){
+function animate(now=0){
   requestAnimationFrame(animate);
+  if(compact&&now-lastFrame<1000/30)return;
+  lastFrame=now;
   const frameDt=Math.min(clock.getDelta(),.033);
   if(document.hidden||!sceneVisible)return;
   const dt=playing?frameDt:0;
@@ -510,7 +524,7 @@ function animate(){
 
   // Solar flares
   nextFlare-=dt;
-  if(nextFlare<=0){spawnFlare();nextFlare=rr(5,12)}
+  if(!compact&&nextFlare<=0){spawnFlare();nextFlare=rr(5,12)}
   for(let i=FLARES.length-1;i>=0;i--){
     const F=FLARES[i];F.life+=dt;const alpha=1-F.life/F.maxLife;
     F.line.material.opacity=alpha*.9;F.glow.material.opacity=alpha*.85;F.glow.scale.setScalar(.5+alpha*.7);
@@ -551,7 +565,7 @@ function animate(){
 
   // Shooting stars
   nextStar-=dt;
-  if(nextStar<=0&&SSTARS.length<4){spawnShootingStar();nextStar=rr(2.5,6)}
+  if(!compact&&nextStar<=0&&SSTARS.length<4){spawnShootingStar();nextStar=rr(2.5,6)}
   for(let i=SSTARS.length-1;i>=0;i--){
     const S=SSTARS[i];S.life+=dt;const alpha=1-S.life/S.maxLife;
     S.start.addScaledVector(S.dir,S.speed*dt);
@@ -562,13 +576,15 @@ function animate(){
 
   // Hyperspace flash
   nextHyper-=dt;
-  if(nextHyper<=0&&!HYPERFLASH.active){triggerHyperflash();nextHyper=rr(32,58)}
+  if(!compact&&nextHyper<=0&&!HYPERFLASH.active){triggerHyperflash();nextHyper=rr(32,58)}
   if(HYPERFLASH.active){
     HYPERFLASH.life+=dt;const alpha=1-HYPERFLASH.life/HYPERFLASH.maxLife;
     HYPERFLASH.lines.forEach(l=>l.material.opacity=Math.max(0,alpha*.88));
     if(HYPERFLASH.life>=HYPERFLASH.maxLife){HYPERFLASH.lines.forEach(l=>scene.remove(l));HYPERFLASH.lines.length=0;HYPERFLASH.active=false}
   }
 
+  // Desktop-only background story. Mobile keeps the planets as the focus.
+  if(!compact){
   // Rocket
   rAngle+=dt*.38;
   const weave=Math.sin(t*.6)*18;
@@ -609,6 +625,7 @@ function animate(){
     E.mesh.geometry.attributes.position.needsUpdate=true;
     if(E.life>E.maxLife){scene.remove(E.mesh);EXPLOSIONS.splice(i,1)}
   }
+  }
 
   if(cameraFlight){
     const progress=Math.min(1,(performance.now()-cameraFlight.start)/1200);
@@ -617,7 +634,8 @@ function animate(){
     controls.target.lerpVectors(cameraFlight.fromTarget,cameraFlight.toTarget,eased);
     if(progress>=1)cameraFlight=null;
   }
-  controls.update();composer.render();
+  controls.update();
+  if(composer)composer.render();else renderer.render(scene,cam);
   careerMarkers.forEach(({button,planet})=>{
     const projected=planet.position.clone().project(cam);
     const x=(projected.x*.5+.5)*W,y=(-projected.y*.5+.5)*H;
@@ -628,7 +646,7 @@ function animate(){
 }
 animate();
 
-window.addEventListener('resize',()=>{W=window.innerWidth;H=window.innerHeight;cam.aspect=W/H;cam.updateProjectionMatrix();renderer.setSize(W,H);composer.setSize(W,H);bloom.resolution.set(W*.5,H*.5)});
+window.addEventListener('resize',()=>{W=window.innerWidth;H=window.innerHeight;cam.aspect=W/H;cam.updateProjectionMatrix();renderer.setSize(W,H);if(composer&&bloom){composer.setSize(W,H);bloom.resolution.set(W*.5,H*.5)}});
 </script>
 </body>
 </html>

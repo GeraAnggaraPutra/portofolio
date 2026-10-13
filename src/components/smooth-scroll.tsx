@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 export function SmoothScroll() {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse), (max-width: 640px)").matches) {
       return;
     }
 

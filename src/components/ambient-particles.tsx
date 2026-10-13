@@ -12,6 +12,7 @@ export function AmbientParticles() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
+    const compact = window.matchMedia("(pointer: coarse), (max-width: 640px)").matches;
 
     let W = window.innerWidth, H = window.innerHeight;
     canvas.width = W;
@@ -29,7 +30,11 @@ export function AmbientParticles() {
     }));
 
     let raf: number;
-    const draw = () => {
+    let lastDraw = 0;
+    const draw = (now: number) => {
+      raf = requestAnimationFrame(draw);
+      if (compact && now - lastDraw < 1000 / 30) return;
+      lastDraw = now;
       ctx.clearRect(0, 0, W, H);
       for (const d of dots) {
         d.x += d.vx;
@@ -45,7 +50,6 @@ export function AmbientParticles() {
         ctx.fillStyle = `rgba(251,191,36,${d.alpha})`;
         ctx.fill();
       }
-      raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
 
