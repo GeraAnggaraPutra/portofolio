@@ -2,8 +2,10 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { ArrowUpRight, Github, X } from "lucide-react";
 import { createPortal } from "react-dom";
+import type { Project } from "@/data/portfolio";
+import { ProjectLinks } from "./project-links";
 
 type DetailModalProps = {
   open: boolean;
@@ -11,10 +13,12 @@ type DetailModalProps = {
   subtitle: string;
   stack: string[];
   bullets: string[];
+  links?: Project["links"];
+  github?: string;
   onClose: () => void;
 };
 
-export function DetailModal({ open, title, subtitle, stack, bullets, onClose }: DetailModalProps) {
+export function DetailModal({ open, title, subtitle, stack, bullets, links, github, onClose }: DetailModalProps) {
   useEffect(() => {
     if (!open) return;
     const scrollY = window.scrollY;
@@ -84,6 +88,23 @@ export function DetailModal({ open, title, subtitle, stack, bullets, onClose }: 
                 </span>
               ))}
             </div>
+
+            {(links?.length || github) && (
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <ProjectLinks links={links} projectTitle={title} />
+                {github && (
+                  <a
+                    href={github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open ${title} on GitHub (new tab)`}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition-colors hover:border-violet-400/45 hover:text-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+                  >
+                    <Github size={15} aria-hidden="true" /> GitHub <ArrowUpRight size={12} aria-hidden="true" />
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="my-5 h-px bg-white/[0.07]" />
 

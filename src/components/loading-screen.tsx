@@ -9,13 +9,17 @@ export function LoadingScreen() {
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDone(true);
+      return;
+    }
     // Only show once per session
     if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("ga-loaded")) {
       setDone(true);
       return;
     }
 
-    const duration = 2000;
+    const duration = 800;
     let startTs: number | null = null;
 
     const tick = (ts: number) => {
@@ -32,7 +36,7 @@ export function LoadingScreen() {
         if (typeof sessionStorage !== "undefined") {
           sessionStorage.setItem("ga-loaded", "1");
         }
-        setTimeout(() => setDone(true), 500);
+        setTimeout(() => setDone(true), 150);
       }
     };
 

@@ -1,43 +1,18 @@
 "use client";
 
-import { useState, useRef, type ReactNode, type MouseEvent } from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Github } from "lucide-react";
 import { projects, type Project } from "@/data/portfolio";
 import { SectionHeader } from "./section-header";
 import { Stagger, StaggerItem } from "./reveal";
 import { DetailModal } from "./detail-modal";
-
-function TiltRow({ children, className }: { children: ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const rx = ((e.clientY - rect.top) / rect.height - 0.5) * -5;
-    const ry = ((e.clientX - rect.left) / rect.width - 0.5) * 8;
-    ref.current.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg)`;
-  };
-
-  const handleMouseLeave = () => {
-    if (!ref.current) return;
-    ref.current.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg)";
-  };
-
-  return (
-    <div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={className}
-      style={{ transition: "transform 0.12s ease-out", willChange: "transform" }}
-    >
-      {children}
-    </div>
-  );
-}
+import { ProjectLinks } from "./project-links";
 
 export function Projects() {
+  const router = useRouter();
   const [selected, setSelected] = useState<Project | null>(null);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
@@ -52,29 +27,31 @@ export function Projects() {
       <Stagger className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
         {projects.map((project, index) => (
           <StaggerItem key={project.title}>
-            <TiltRow>
             <motion.article
-              onClick={() => {
-                // Mobile: first tap expands, second tap opens modal
-                if (window.matchMedia("(pointer: coarse)").matches) {
-                  if (expandedIdx === index) { setSelected(project); setExpandedIdx(null); }
-                  else setExpandedIdx(index);
-                } else {
-                  setSelected(project);
-                }
-              }}
               onHoverStart={() => { if (!window.matchMedia("(pointer: coarse)").matches) setExpandedIdx(index); }}
               onHoverEnd={() => { if (!window.matchMedia("(pointer: coarse)").matches) setExpandedIdx(null); }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && setSelected(project)}
-              aria-label={`View ${project.title} details`}
-              className="group relative cursor-pointer py-6 sm:py-7"
+              className="group relative py-6 sm:py-7"
             >
               {/* Left accent bar — amber, scales in on hover */}
               <div className="absolute left-0 top-4 h-[calc(100%-2rem)] w-0.5 origin-top scale-y-0 rounded-full bg-amber-500/70 transition-transform duration-200 group-hover:scale-y-100" />
 
-              <div className="flex items-start gap-4 pl-4 sm:pl-6">
+              <button
+                type="button"
+                onClick={() => {
+                  if (project.caseStudyHref) {
+                    router.push(project.caseStudyHref);
+                    return;
+                  }
+                  if (window.matchMedia("(pointer: coarse)").matches) {
+                    if (expandedIdx === index) { setSelected(project); setExpandedIdx(null); }
+                    else setExpandedIdx(index);
+                  } else {
+                    setSelected(project);
+                  }
+                }}
+                aria-label={project.caseStudyHref ? `Read ${project.title} case study` : `View ${project.title} details`}
+                className="flex w-full cursor-pointer items-start gap-4 rounded-sm pl-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 sm:pl-6"
+              >
                 {/* Index number */}
                 <span className="mono mt-0.5 w-5 shrink-0 text-[0.65rem] text-zinc-700">
                   {String(index + 1).padStart(2, "0")}
@@ -136,28 +113,39 @@ export function Projects() {
                   </AnimatePresence>
                 </div>
 
-                {/* Right side: GitHub link (if any) + Arrow */}
+                {/* Detail affordance */}
                 <div className="mt-1.5 flex shrink-0 items-center gap-2">
-                  {project.github && (
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label="View on GitHub"
-                      className="text-zinc-600 transition hover:text-violet-400"
-                    >
-                      <Github size={16} />
-                    </a>
-                  )}
                   <ArrowUpRight
                     size={18}
                     className="text-zinc-600 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-amber-400"
                   />
                 </div>
-              </div>
+              </button>
+              {(project.links?.length || project.github) && (
+                <div className="mt-4 flex flex-wrap items-center gap-2 pl-12 sm:pl-14">
+                  {project.caseStudyHref && (
+                    <Link
+                      href={project.caseStudyHref}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-400/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                    >
+                      Read case study <ArrowUpRight size={13} aria-hidden="true" />
+                    </Link>
+                  )}
+                  <ProjectLinks links={project.links} projectTitle={project.title} />
+                  {project.github && (
+                    <a
+                      href={project.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Open ${project.title} on GitHub (new tab)`}
+                      className="inline-flex min-h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition-colors hover:border-violet-400/45 hover:bg-violet-400/10 hover:text-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+                    >
+                      <Github size={15} aria-hidden="true" /> GitHub <ArrowUpRight size={12} aria-hidden="true" />
+                    </a>
+                  )}
+                </div>
+              )}
             </motion.article>
-            </TiltRow>
           </StaggerItem>
         ))}
       </Stagger>
@@ -169,6 +157,8 @@ export function Projects() {
           subtitle={selected.eyebrow}
           stack={selected.stack}
           bullets={selected.bullets}
+          links={selected.links}
+          github={selected.github}
           onClose={() => setSelected(null)}
         />
       )}

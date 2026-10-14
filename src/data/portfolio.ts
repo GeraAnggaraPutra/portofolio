@@ -28,6 +28,8 @@ export type Project = {
   accent: "cyan" | "emerald" | "amber" | "blue";
   bullets: string[];
   github?: string;
+  links?: { platform: "web" | "playstore" | "appstore"; href: string }[];
+  caseStudyHref?: "/projects/unara-people";
 };
 
 export type Experience = {
@@ -95,33 +97,38 @@ export const systemNodes = [
 
 export const projects: Project[] = [
   {
-    title: "NATA HR",
+    title: "UNARA People",
     eyebrow: "HRIS platform",
+    caseStudyHref: "/projects/unara-people",
+    links: [
+      { platform: "web", href: "https://people.unara.id" },
+      { platform: "playstore", href: "https://play.google.com/store/apps/details?id=com.nba.unara_people" },
+      { platform: "appstore", href: "https://apps.apple.com/in/app/unara-people/id6812378130" },
+    ],
     summary:
-      "Core backend services for a SaaS HRIS platform covering employee management, attendance, payroll, approvals, and mobile operations.",
+      "Multi-company HRIS across four Go services. I built patrol end to end and worked across API security, online and offline attendance, leave, payroll, and observability.",
     problem:
       "Payroll and attendance workflows can fail halfway or silently duplicate when consistency is not designed in from the start.",
     impact:
-      "Applied transactions, idempotent processing, Redis caching, background workers, custom API Gateway, and full observability across services.",
-    stack: ["Go", "PostgreSQL", "Redis", "S3", "Microservices", "Grafana", "Loki", "Prometheus"],
+      "Connected domain ownership, online and offline attendance, patrol sync, transactional payroll workflows, and traceable operations across four services.",
+    stack: ["Go", "PostgreSQL", "Redis", "SSE", "S3", "FCM", "Grafana", "Loki", "Prometheus"],
     accent: "cyan",
     bullets: [
-    "Engineered core backend services for a SaaS-based HRIS platform using Go, PostgreSQL, Redis, and microservice architecture.",
-    "Built Master Service as the single source of truth for authentication, company configuration, employee records, and payroll reference data.",
-    "Built Transaction Service covering employee attendance, payroll processing, leave, overtime, work permit, and approval workflows.",
-    "Developed a custom API Gateway from scratch in Go — implementing authentication middleware, request routing, identity enrichment (injecting User ID, Company ID, Employee ID into upstream requests), HMAC-based inter-service request signing, per-IP rate limiting, circuit breaker for upstream resilience, CORS, request ID propagation, and centralized logging.",
-    "Designed and implemented a payroll calculation engine supporting formula-based component definitions, dependency resolution, multi-mode PPh21 tax calculation (GROSS, NET gross-up, TAX_BORNE) using TER rates per PMK 168/2023, and full audit snapshot of formula context per employee per cycle.",
-    "Built an attendance interface process that converts raw daily attendance records into structured payroll-ready metrics — working days, absences, overtime, tardiness, and productive hours — with holiday-aware and schedule-aware day classification.",
-    "Implemented transactional guarantees and idempotent upsert patterns across payroll and attendance workflows to prevent partial updates and duplicate data on re-runs.",
-    "Delivered async background processing for payroll jobs using goroutine-based workers, with real-time process status tracking, per-employee error reporting, and progress visibility.",
-    "Implemented full observability stack using Grafana, Loki, Alloy, and Prometheus — enabling centralized structured logs, service metrics, and correlation ID-based request tracing across all backend services.",
-    "Maintained consistent clean architecture patterns across services: layered separation (domain → application → infrastructure → presentation), company-scoped data isolation, soft delete, Swagger documentation, and Docker-based deployment templates.",
-    "Integrated S3-compatible object storage to manage application file uploads and document storage across HRIS workflows.",
-  ],
+      "Worked across the API Gateway, Master Service, Transaction Service, and observability stack, with clear ownership of policy data and operational events.",
+      "Designed and implemented patrol end to end: areas, assets, QR validation, assignments, inspections, offline synchronization, and scheduled follow-up.",
+      "Integrated online and offline attendance with shift and location rules, signed offline events, deduplication, audited corrections, and payroll inputs.",
+      "Contributed to leave balance transitions, approval flows, bulk import/export, and payroll accuracy across service boundaries.",
+      "Worked on formula-based payroll with effective-dated inputs, TER-based PPh21 modes, auditable result snapshots, SSE progress, and downstream exports.",
+      "Integrated authentication, menu-based permissions, signed upstream requests, rate limits, circuit breakers, structured logs, metrics, dashboards, and alerts.",
+    ],
   },
   {
     title: "MyNusapala",
     eyebrow: "Parking membership",
+    links: [
+      { platform: "playstore", href: "https://play.google.com/store/apps/details?id=com.abarobotics.astaparking" },
+      { platform: "appstore", href: "https://apps.apple.com/in/app/mynusapala/id6596767531" },
+    ],
     summary:
       "Mobile APIs for parking memberships, transactions, user profiles, payments, and location-based data synchronization.",
     problem:
@@ -138,8 +145,9 @@ export const projects: Project[] = [
     ],
   },
   {
-    title: "NATA Asset",
+    title: "UNARA Asset",
     eyebrow: "Asset management",
+    links: [{ platform: "web", href: "https://asset.unara.id" }],
     summary:
       "Internal asset tracking backend for inventory workflows, asset registration, and reliable operational data management.",
     problem:
@@ -220,6 +228,7 @@ export const projects: Project[] = [
   {
     title: "Tawada Compro",
     eyebrow: "Company profile",
+    links: [{ platform: "web", href: "https://www.tawadahealthcare.com" }],
     summary:
       "Company profile website for Tawada with a built-in Content Management System for non-technical content management.",
     problem:
@@ -282,6 +291,7 @@ export const projects: Project[] = [
   {
     title: "Endermo Compro",
     eyebrow: "Company profile",
+    links: [{ platform: "web", href: "https://endermoindonesia.com" }],
     summary:
       "Company profile backend for a client platform, delivering structured content APIs and a built-in CMS.",
     problem:
