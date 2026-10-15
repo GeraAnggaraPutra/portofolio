@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { LoadingScreen } from "@/components/loading-screen";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <a href="#main-content" className="skip-link">Skip to content</a>
         {/* Film-grain texture overlay — subtle premium feel */}
         <div
           aria-hidden="true"
@@ -43,7 +43,6 @@ export default function RootLayout({
             opacity: 0.6,
           }}
         />
-        <LoadingScreen />
         {children}
       </body>
     </html>

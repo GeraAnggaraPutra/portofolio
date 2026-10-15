@@ -15,7 +15,7 @@ export function Navbar() {
     <header className="fixed inset-x-0 top-5 z-50 px-4 sm:px-8 xl:px-14">
       {/* Floating bar */}
       <div className="mx-auto max-w-screen-2xl">
-        <nav className="flex h-14 items-center justify-between rounded-xl border border-white/[0.1] bg-[#07090f]/90 px-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md sm:px-8">
+        <nav className="flex h-14 items-center justify-between rounded-xl border border-white/[0.1] bg-[#14110d]/90 px-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md sm:px-8">
           {/* Logo */}
           <a
             href="#home"
@@ -44,8 +44,10 @@ export function Navbar() {
           <button
             type="button"
             aria-label="Toggle menu"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
             onClick={() => setOpen((v) => !v)}
-            className="text-zinc-300 transition hover:text-white lg:hidden"
+            className="grid size-11 place-items-center text-zinc-300 transition hover:text-white lg:hidden"
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -59,8 +61,10 @@ export function Navbar() {
 
         {/* Mobile drawer */}
         <div
+          id="mobile-navigation"
+          aria-hidden={!open}
           className={cn(
-            "overflow-hidden rounded-b-xl border-x border-b border-white/[0.12] bg-[#0a0b0f] transition-all duration-300 lg:hidden",
+            "overflow-hidden rounded-b-xl border-x border-b border-white/[0.12] bg-[#14110d] transition-all duration-300 lg:hidden",
             open ? "max-h-72 opacity-100" : "max-h-0 opacity-0",
           )}
         >
@@ -70,6 +74,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
+                tabIndex={open ? 0 : -1}
                 className="py-2.5 text-sm text-zinc-100 transition hover:text-white"
               >
                 {item.label}

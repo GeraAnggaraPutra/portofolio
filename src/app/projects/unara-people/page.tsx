@@ -21,6 +21,15 @@ export const metadata: Metadata = {
 
 const project = projects[0];
 
+const caseSections = [
+  ["Architecture", "architecture-title"],
+  ["Attendance", "attendance-title"],
+  ["Patrol", "patrol-title"],
+  ["Payroll", "payroll-title"],
+  ["Decisions", "decisions-title"],
+  ["Reliability", "integrity-title"],
+] as const;
+
 const services = [
   {
     number: "01",
@@ -107,11 +116,32 @@ const payrollSteps = [
   ["06", "Deliver", "Stream process progress through SSE, inspect per-employee failures, then generate reports, payslips, bank files, and Coretax exports."],
 ] as const;
 
+const designDecisions = [
+  {
+    number: "01", category: "Domain ownership", title: "Keep policy in one place.",
+    constraint: "An employee's shift, location rules, approval route, and company context can change. A transaction needs the rules effective for that decision.",
+    decision: "Master Service owns policy and reference data. Transaction Service requests that context and stores the event or result it produces.",
+    consequence: "Operational records do not depend on a second, drifting copy of HR policy.",
+  },
+  {
+    number: "02", category: "Offline attendance", title: "Reconnect without rewriting the rules.",
+    constraint: "A clock event may arrive after capture, out of network order, or more than once after a retry.",
+    decision: "Use a scoped offline token, signed event data, time and identity checks, and a client event ID. Valid events enter the shared clock processing path.",
+    consequence: "The system preserves when the action happened and when it was received, while rejecting duplicate submissions.",
+  },
+  {
+    number: "03", category: "Payroll accuracy", title: "Make the result explainable.",
+    constraint: "Effective-dated pay, attendance, dependent formulas, tax modes, and partial failures all affect the final amount.",
+    decision: "Order formula dependencies, save calculated components and context as a snapshot, expose progress, and allow failed employees to be retried.",
+    consequence: "Reports and exports use the stored payroll result instead of silently recalculating it later.",
+  },
+];
+
 function SectionHeading({ id, eyebrow, title, description }: { id: string; eyebrow: string; title: string; description: string }) {
   return (
     <div className="max-w-3xl">
       <p className="mono text-[0.68rem] font-medium uppercase tracking-[0.24em] text-amber-400">{eyebrow}</p>
-      <h2 id={id} className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h2>
+      <h2 id={id} className="mt-3 scroll-mt-28 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h2>
       <p className="mt-4 text-sm leading-7 text-zinc-400 sm:text-base">{description}</p>
     </div>
   );
@@ -119,7 +149,7 @@ function SectionHeading({ id, eyebrow, title, description }: { id: string; eyebr
 
 export default function UnaraPeopleCaseStudy() {
   return (
-    <main className="relative z-10 min-h-screen overflow-hidden pb-20">
+    <main id="main-content" className="relative z-10 min-h-screen overflow-x-clip pb-20">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[660px] bg-[radial-gradient(ellipse_at_52%_0%,rgba(47,138,155,0.17),transparent_62%)]" aria-hidden="true" />
 
       <div className="container-x relative">
@@ -146,6 +176,13 @@ export default function UnaraPeopleCaseStudy() {
           </div>
           <div className="mt-8"><ProjectLinks links={project.links} projectTitle={project.title} /></div>
         </section>
+
+        <nav aria-label="Case study sections" className="sticky top-0 z-30 -mx-4 flex items-center gap-4 overflow-x-auto border-y border-white/10 bg-[#100e0b]/95 px-4 py-3 backdrop-blur-md scrollbar-hide sm:mx-0 sm:rounded-xl sm:border sm:px-5">
+          <span className="mono shrink-0 text-[0.6rem] uppercase tracking-[0.17em] text-amber-300">Explore</span>
+          {caseSections.map(([label, id]) => (
+            <a key={id} href={`#${id}`} className="shrink-0 rounded-full px-3 py-2 text-xs font-medium text-zinc-400 transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{label}</a>
+          ))}
+        </nav>
 
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="architecture-title">
           <SectionHeading id="architecture-title" eyebrow="System architecture" title="Four repositories, clear ownership." description="Rules and reference data stay in Master Service. Transaction Service owns events and results. The gateway protects access, while observability shows what happened when something goes wrong." />
@@ -206,17 +243,22 @@ export default function UnaraPeopleCaseStudy() {
           <p className="mt-5 text-xs leading-6 text-zinc-500">NET mode iterates the tax allowance because gross-up can move taxable income into a different TER bracket. A failed employee can be inspected and reprocessed before the period is closed.</p>
         </section>
 
-        <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="operations-title">
-          <SectionHeading id="operations-title" eyebrow="Day-to-day operations" title="The context around every HR decision." description="Attendance and approvals depend on rules that change by employee, company, schedule, and effective date. The backend keeps those rules in one place while recording each operational decision where it happens." />
-          <div className="mt-9 grid gap-3 md:grid-cols-2">
-            <article className="rounded-2xl border border-white/10 bg-white/[0.025] p-6 sm:p-7">
-              <h3 className="text-xl font-semibold text-white">Attendance with real shift context</h3>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">Master Service owns changing shift and location rules. Transaction Service applies them to online and offline clock events, preserves an audit trail for corrections, and turns attendance results into payroll inputs.</p>
-            </article>
-            <article className="rounded-2xl border border-white/10 bg-white/[0.025] p-6 sm:p-7">
-              <h3 className="text-xl font-semibold text-white">Approval driven by policy</h3>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">Master Service defines stages and eligible approvers, including cross-company cases. Transaction Service records leave, overtime, WFH, permit, and attendance correction requests and approver actions. Leave decisions trigger the corresponding balance transition.</p>
-            </article>
+        <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="decisions-title">
+          <SectionHeading id="decisions-title" eyebrow="Engineering decisions" title="What the implementation had to get right." description="These choices connect the architecture to the real constraints of multi-company HR workflows: changing policy, unreliable connections, and results that must be explainable." />
+          <div className="mt-9 space-y-3">
+            {designDecisions.map((item) => (
+              <article key={item.number} className="overflow-hidden rounded-2xl border border-white/10 bg-[#14130f]/85">
+                <div className="grid gap-5 p-6 sm:p-8 lg:grid-cols-[0.8fr_1fr_1fr] lg:gap-8">
+                  <div>
+                    <p className="mono text-[0.65rem] uppercase tracking-[0.2em] text-amber-300">{item.number} / {item.category}</p>
+                    <h3 className="mt-3 max-w-xs text-2xl font-semibold leading-tight tracking-tight text-white">{item.title}</h3>
+                  </div>
+                  <div><p className="mono text-[0.6rem] uppercase tracking-[0.2em] text-zinc-500">Constraint</p><p className="mt-2 text-sm leading-7 text-zinc-300">{item.constraint}</p></div>
+                  <div><p className="mono text-[0.6rem] uppercase tracking-[0.2em] text-zinc-500">Decision</p><p className="mt-2 text-sm leading-7 text-zinc-300">{item.decision}</p></div>
+                </div>
+                <div className="border-t border-white/[0.07] bg-amber-300/[0.045] px-6 py-4 text-sm leading-6 text-amber-100/80 sm:px-8"><span className="mono mr-3 text-[0.6rem] uppercase tracking-[0.16em] text-amber-300">Why it matters</span>{item.consequence}</div>
+              </article>
+            ))}
           </div>
         </section>
 

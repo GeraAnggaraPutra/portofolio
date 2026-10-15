@@ -12,7 +12,7 @@ export function Cursor() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!window.matchMedia("(pointer: coarse)").matches) setShow(true);
+    if (!window.matchMedia("(pointer: coarse), (prefers-reduced-motion: reduce)").matches) setShow(true);
   }, []);
 
   useEffect(() => {

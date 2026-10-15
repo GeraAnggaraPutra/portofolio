@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Github, X } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -19,20 +19,39 @@ type DetailModalProps = {
 };
 
 export function DetailModal({ open, title, subtitle, stack, bullets, links, github, onClose }: DetailModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     const scrollY = window.scrollY;
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = "100%";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const focusFrame = requestAnimationFrame(() => closeRef.current?.focus());
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? []);
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener("keydown", onKey);
     return () => {
+      cancelAnimationFrame(focusFrame);
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.width = "";
       window.scrollTo(0, scrollY);
       window.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus({ preventScroll: true });
     };
   }, [open, onClose]);
 
@@ -52,6 +71,7 @@ export function DetailModal({ open, title, subtitle, stack, bullets, links, gith
           />
 
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={title}
@@ -59,13 +79,15 @@ export function DetailModal({ open, title, subtitle, stack, bullets, links, gith
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 60 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-0 left-0 right-0 z-[9991] mx-auto max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] border border-white/10 bg-[#08101a] p-6 pb-10 shadow-2xl scrollbar-hide md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:rounded-[2rem] md:p-8 md:pb-8"
+            className="fixed bottom-0 left-0 right-0 z-[9991] mx-auto max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] border border-white/10 bg-[#15130f] p-6 pb-10 shadow-2xl scrollbar-hide md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:rounded-[2rem] md:p-8 md:pb-8"
             onClick={(e) => e.stopPropagation()}
             onWheel={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-white/20 md:hidden" />
 
             <button
+              ref={closeRef}
+              type="button"
               onClick={onClose}
               aria-label="Close"
               className="absolute right-5 top-5 grid size-9 place-items-center rounded-full border border-white/10 text-zinc-400 transition hover:border-white/25 hover:text-white"

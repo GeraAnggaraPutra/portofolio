@@ -1,295 +1,116 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring, useTransform, useInView, AnimatePresence } from "framer-motion";
-import { ArrowDown, MoveUpRight } from "lucide-react";
-import { stats } from "@/data/portfolio";
+import { useState } from "react";
+import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowDownRight, ArrowUpRight, Check, ChevronRight } from "lucide-react";
 
-const LOG_LINES = [
-  { level: "INFO", msg: 'tx=00e91a3d status=committed rows=1', color: "text-emerald-400" },
-  { level: "INFO", msg: 'cache HIT key=user:4821 ttl=58s', color: "text-sky-400" },
-  { level: "WARN", msg: 'retry attempt=2 tx=00f13c2a', color: "text-amber-400" },
-  { level: "INFO", msg: 'span payroll.calculate dur=12ms', color: "text-emerald-400" },
-  { level: "INFO", msg: 'tx=00e91b88 status=committed', color: "text-emerald-400" },
-  { level: "INFO", msg: 'cache MISS key=report:2025 fill=true', color: "text-zinc-400" },
-];
-
-const LATENCIES = ["0.1", "0.2", "0.3", "0.2", "0.4", "0.1", "0.2"];
-const TX_IDS = ["00e91a3d", "00f13c2a", "00e91b88", "00a7dc41"];
-
-const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
-const wordVariants = { hidden: { opacity: 0, y: 40 }, show: { opacity: 1, y: 0 } };
+const workflows = [
+  {
+    id: "attendance", label: "Attendance", number: "01",
+    headline: "A clock event that survives a lost connection.",
+    description: "Shift and location rules stay authoritative. Offline events carry a scoped token and signature, then rejoin the same clock processing flow after validation and deduplication.",
+    stages: ["Shift context", "Signed event", "Safe sync", "Payroll input"],
+    outcome: "Online and offline attendance",
+  },
+  {
+    id: "payroll", label: "Payroll", number: "02",
+    headline: "The right result, with a trail back to the rule.",
+    description: "Effective-dated inputs flow through ordered formulas and TER-based tax handling. Results are saved as snapshots; progress and employee-level failures stay visible.",
+    stages: ["Dated inputs", "Formula graph", "Tax modes", "Result snapshot"],
+    outcome: "Auditable payroll processing",
+  },
+  {
+    id: "patrol", label: "Patrol", number: "03",
+    headline: "Field evidence, from assignment to inspection.",
+    description: "Area and asset rules become an authorized round. The mobile flow validates QR scans, records evidence, and synchronizes inspections safely when connectivity returns.",
+    stages: ["Round setup", "QR validation", "Inspection", "Safe sync"],
+    outcome: "End-to-end feature ownership",
+  },
+] as const;
 
 export function Hero() {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 50, damping: 20 });
-  const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
-  const cardX = useTransform(springX, [-0.5, 0.5], [-12, 12]);
-  const cardY = useTransform(springY, [-0.5, 0.5], [-8, 8]);
-
-  // Magnetic CTA
-  const btnRef = useRef<HTMLDivElement>(null);
-  const btnX = useMotionValue(0);
-  const btnY = useMotionValue(0);
-  const btnSpringX = useSpring(btnX, { stiffness: 200, damping: 20 });
-  const btnSpringY = useSpring(btnY, { stiffness: 200, damping: 20 });
-
-  // Counting stats
-  const statsRef = useRef<HTMLDListElement>(null);
-  const statsInView = useInView(statsRef, { once: true, margin: "-80px" });
-  const [counts, setCounts] = useState(stats.map(() => 0));
-
-  // Live preview card state
-  const [txPhase, setTxPhase] = useState<"processing" | "committed">("committed");
-  const [txId, setTxId] = useState(0);
-  const [latencyIdx, setLatencyIdx] = useState(1);
-  const [logHead, setLogHead] = useState(0);
-
-  useEffect(() => {
-    if (!statsInView) return;
-    const duration = 800;
-    const interval = 30;
-    const ticks = Math.round(duration / interval);
-    const timers: ReturnType<typeof setInterval>[] = [];
-    stats.forEach((stat, i) => {
-      const match = stat.value.match(/^(\d+)/);
-      if (!match) return;
-      const target = parseInt(match[1], 10);
-      let tick = 0;
-      const t = setInterval(() => {
-        tick++;
-        setCounts((prev) => {
-          const next = [...prev];
-          next[i] = Math.round((target * tick) / ticks);
-          return next;
-        });
-        if (tick >= ticks) clearInterval(t);
-      }, interval);
-      timers.push(t);
-    });
-    return () => timers.forEach(clearInterval);
-  }, [statsInView]);
-
-  // Cycle live preview card data
-  useEffect(() => {
-    const txTimer = setInterval(() => {
-      setTxPhase("processing");
-      setTimeout(() => {
-        setTxPhase("committed");
-        setTxId((i) => (i + 1) % TX_IDS.length);
-      }, 1200);
-    }, 3500);
-    const latTimer = setInterval(() => setLatencyIdx((i) => (i + 1) % LATENCIES.length), 1800);
-    const logTimer = setInterval(() => setLogHead((i) => (i + 1) % LOG_LINES.length), 2200);
-    return () => { clearInterval(txTimer); clearInterval(latTimer); clearInterval(logTimer); };
-  }, []);
+  const [selected, setSelected] = useState(0);
+  const reduceMotion = useReducedMotion();
+  const workflow = workflows[selected];
 
   return (
-    <section
-      id="home"
-      className="relative min-h-screen overflow-hidden pt-24 sm:pt-28"
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-        mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-      }}
-      onMouseLeave={() => {
-        mouseX.set(0);
-        mouseY.set(0);
-      }}
-    >
-      <div className="absolute inset-0 -z-10" />
+    <section id="home" className="relative isolate overflow-hidden pt-28 sm:pt-36">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[780px] bg-[radial-gradient(ellipse_at_72%_15%,rgba(251,191,36,0.12),transparent_52%)]" />
+      <div className="container-x relative pb-16 sm:pb-24">
+        <div className="grid items-end gap-12 lg:grid-cols-[1.06fr_0.94fr] lg:gap-16">
+          <div className="max-w-3xl">
+            <div className="mb-7 flex flex-wrap items-center gap-3 text-[0.65rem] font-medium uppercase tracking-[0.23em] text-zinc-400 sm:mb-9">
+              <span className="flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-2 text-emerald-300">
+                <span className="size-1.5 rounded-full bg-emerald-400" /> Open to opportunities
+              </span>
+              <span className="mono">Go backend engineer · Bandung, Indonesia</span>
+            </div>
+            <h1 className="max-w-[12ch] text-balance text-[clamp(3.5rem,8.3vw,7.7rem)] font-semibold leading-[0.91] tracking-[-0.075em] text-white">
+              Complex rules.<br /><span className="text-amber-300">Calm systems.</span>
+            </h1>
+            <p className="mt-7 max-w-xl text-base leading-8 text-zinc-300 sm:mt-9 sm:text-lg sm:leading-9">
+              I&apos;m Gera Anggara Putra. I build Go services for HRIS, payments, and operations where correctness, resilience, and clear production signals matter.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 sm:mt-10">
+              <Link href="/projects/unara-people" className="group inline-flex min-h-12 items-center gap-2 rounded-full bg-amber-300 px-5 text-sm font-semibold text-[#17120b] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+                Explore flagship case study <ArrowUpRight size={17} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+              </Link>
+              <a href="#projects" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/20 bg-white/[0.035] px-5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+                Selected work <ArrowDownRight size={17} aria-hidden="true" />
+              </a>
+            </div>
+            <div className="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-5 text-xs text-zinc-500 sm:mt-16">
+              <span><strong className="mr-2 font-medium text-zinc-200">3+ years</strong> building backend systems</span>
+              <span><strong className="mr-2 font-medium text-zinc-200">10+ projects</strong> across product and client work</span>
+            </div>
+          </div>
 
-      <div className="container-x grid min-h-[calc(100vh-6rem)] items-center gap-10 pb-14 lg:min-h-[calc(100vh-8rem)] lg:grid-cols-[1.02fr_0.98fr]">
-        <div className="relative">
-          <div className="pointer-events-none absolute inset-0 -inset-x-8 rounded-3xl bg-[#0d0c0a]/40 blur-2xl" />
-          <div className="relative">
-            <motion.h1
-              initial="hidden"
-              animate="show"
-              variants={containerVariants}
-              className="text-balance text-4xl font-semibold leading-[0.98] text-white min-[380px]:text-5xl sm:text-6xl lg:text-6xl xl:text-7xl"
-            >
-              {["Backend", "systems,", "made", "visible."].map((word) => (
-                <motion.span
-                  key={word}
-                  variants={wordVariants}
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                  className="mr-4 inline-block"
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.72, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-5 max-w-2xl text-sm leading-7 text-zinc-300 min-[380px]:text-base sm:text-lg"
-            >
-              3+ years shipping Go services across HRIS, payments, logistics, and
-              distributed systems. I care about transactions, caching, and making
-              production behavior visible.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.72, delay: 0.58, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 sm:mt-7"
-            >
-              <div
-                ref={btnRef}
-                onMouseMove={(e) => {
-                  const rect = btnRef.current!.getBoundingClientRect();
-                  const centerX = rect.left + rect.width / 2;
-                  const centerY = rect.top + rect.height / 2;
-                  btnX.set((e.clientX - centerX) * 0.35);
-                  btnY.set((e.clientY - centerY) * 0.35);
-                }}
-                onMouseLeave={() => { btnX.set(0); btnY.set(0); }}
-                className="inline-block"
-              >
-                <motion.a
-                  href="#projects"
-                  style={{ x: btnSpringX, y: btnSpringY }}
-                  className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold !text-[#0d0c0a] transition hover:bg-amber-50"
-                >
-                  View selected work
-                  <MoveUpRight size={17} className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </motion.a>
+          <div className="relative lg:pb-1">
+            <div aria-hidden="true" className="absolute -inset-5 -z-10 rounded-[2.4rem] bg-amber-400/[0.05] blur-3xl" />
+            <div className="overflow-hidden rounded-[1.6rem] border border-amber-200/20 bg-[#15130f]/95 shadow-[0_34px_100px_rgba(0,0,0,0.4)]">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-5 py-4 sm:px-6">
+                <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(252,211,77,0.7)]" /><p className="mono text-[0.65rem] uppercase tracking-[0.2em] text-amber-200">Inside the system</p></div>
+                <span className="mono text-[0.6rem] uppercase tracking-[0.16em] text-zinc-500">UNARA People / selected flows</span>
               </div>
-            </motion.div>
-
-            <motion.dl
-              ref={statsRef}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.72, delay: 0.72, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 grid max-w-xl grid-cols-3 gap-3 sm:mt-8"
-            >
-              {stats.map((stat, i) => {
-                const match = stat.value.match(/^(\d+)(.*)$/);
-                const displayValue = match ? `${counts[i]}${match[2]}` : stat.value;
-                return (
-                  <div key={stat.label} className={`rounded-3xl border p-3 sm:p-4 ${
-                    i === 0 ? "border-amber-500/50 bg-amber-900/30" :
-                    i === 1 ? "border-sky-500/35 bg-sky-900/20" :
-                             "border-emerald-500/35 bg-emerald-900/20"
-                  }`}>
-                    <dt className={`text-2xl font-semibold ${
-                      i === 0 ? "text-amber-300" : i === 1 ? "text-sky-300" : "text-emerald-300"
-                    }`}>{displayValue}</dt>
-                    <dd className="mt-1 text-xs leading-5 text-zinc-500">{stat.label}</dd>
-                  </div>
-                );
-              })}
-            </motion.dl>
+              <div className="flex gap-1 overflow-x-auto border-b border-white/10 p-2 scrollbar-hide" role="tablist" aria-label="Explore UNARA People backend workflows">
+                {workflows.map((item, index) => (
+                  <button key={item.id} type="button" id={`workflow-tab-${item.id}`} role="tab" aria-selected={selected === index} aria-controls="workflow-panel" tabIndex={selected === index ? 0 : -1} onClick={() => setSelected(index)} onKeyDown={(event) => {
+                    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+                    event.preventDefault();
+                    const next = (index + (event.key === "ArrowRight" ? 1 : workflows.length - 1)) % workflows.length;
+                    setSelected(next);
+                    document.getElementById(`workflow-tab-${workflows[next].id}`)?.focus();
+                  }} className={`flex min-h-11 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:text-sm ${selected === index ? "bg-amber-300 text-[#17120b]" : "text-zinc-400 hover:bg-white/[0.06] hover:text-white"}`}>
+                    <span className="mono text-[0.6rem] opacity-60">{item.number}</span>{item.label}
+                  </button>
+                ))}
+              </div>
+              <div id="workflow-panel" role="tabpanel" aria-labelledby={`workflow-tab-${workflow.id}`} className="min-h-[22rem] p-5 sm:p-7">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div key={workflow.id} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+                    <p className="mono text-[0.62rem] uppercase tracking-[0.22em] text-amber-400/80">{workflow.outcome}</p>
+                    <h2 className="mt-3 max-w-md text-balance text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">{workflow.headline}</h2>
+                    <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-400">{workflow.description}</p>
+                    <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {workflow.stages.map((stage, index) => (
+                        <div key={stage} className="min-h-20 rounded-xl border border-white/10 bg-white/[0.035] p-3">
+                          <div className="flex items-center justify-between"><span className="mono text-[0.6rem] text-amber-300">0{index + 1}</span>{index === 3 ? <Check size={13} className="text-emerald-300" aria-hidden="true" /> : <ChevronRight size={13} className="text-zinc-600" aria-hidden="true" />}</div>
+                          <p className="mt-3 text-xs font-medium leading-4 text-zinc-200">{stage}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              <div className="flex items-center justify-between gap-4 border-t border-white/10 px-5 py-3 sm:px-7">
+                <span className="mono text-[0.6rem] uppercase tracking-[0.14em] text-zinc-500">Conceptual flow · based on implemented backend</span>
+                <Link href="/projects/unara-people" className="shrink-0 text-xs font-medium text-amber-200 hover:text-amber-100">Full story ↗</Link>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Right side — system preview card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 24 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          style={{ x: cardX, y: cardY }}
-          className="relative mx-auto aspect-[0.96] w-full max-w-[31rem] max-sm:h-[28rem] max-sm:aspect-auto max-lg:mt-2"
-        >
-          <div className="scanline absolute inset-0 flex flex-col rounded-[2rem] border border-white/[0.08] bg-gradient-to-b from-[#161410] to-[#0d0c0a] p-4 shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-white/[0.07] pb-4">
-              <span className="size-3 rounded-full bg-[#ff5f57]/80" />
-              <span className="size-3 rounded-full bg-[#febc2e]/80" />
-              <span className="size-3 rounded-full bg-[#28c840]/80" />
-              <span className="mono ml-3 text-xs text-zinc-600">system.preview</span>
-            </div>
-            <div className="relative mt-4 flex-1 overflow-hidden rounded-b-[1.4rem] max-sm:flex max-sm:flex-col max-sm:gap-3 max-sm:p-3">
-              {/* Transaction card — amber tint, live cycling */}
-              <div className="absolute inset-x-6 top-8 rounded-3xl border border-amber-500/50 bg-amber-900/30 p-5 max-sm:static max-sm:p-4 sm:inset-x-8 sm:top-10">
-                <div className="flex items-center justify-between">
-                  <p className="mono text-xs uppercase tracking-[0.2em] text-amber-400">transaction</p>
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={txPhase}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.25 }}
-                      className={`mono flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-widest ${
-                        txPhase === "processing"
-                          ? "border border-amber-500/40 bg-amber-900/40 text-amber-300"
-                          : "border border-emerald-500/40 bg-emerald-900/30 text-emerald-300"
-                      }`}
-                    >
-                      {txPhase === "processing" ? (
-                        <><span className="inline-block size-1.5 rounded-full bg-amber-400 animate-pulse" />processing</>
-                      ) : (
-                        <><span className="inline-block size-1.5 rounded-full bg-emerald-400" />committed</>
-                      )}
-                    </motion.span>
-                  </AnimatePresence>
-                </div>
-                <p className="mt-3 text-xl font-semibold text-white sm:text-2xl">Distributed processing</p>
-                <p className="mono mt-2 text-[0.65rem] text-zinc-500">
-                  tx=<span className="text-amber-400/80">{TX_IDS[txId]}</span>
-                </p>
-              </div>
-              {/* Cache card — emerald, live latency */}
-              <div className="absolute left-6 top-44 w-44 rounded-3xl border border-emerald-500/40 bg-emerald-900/25 p-4 max-sm:static max-sm:w-full sm:left-8 sm:top-48">
-                <div className="flex items-center gap-1.5">
-                  <p className="mono text-xs text-emerald-400">cache ·</p>
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={latencyIdx}
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 6 }}
-                      transition={{ duration: 0.2 }}
-                      className="mono text-xs text-emerald-300 font-semibold"
-                    >
-                      {LATENCIES[latencyIdx]}ms
-                    </motion.span>
-                  </AnimatePresence>
-                </div>
-                <p className="mt-2 text-sm text-zinc-200">sub-ms reads, source-of-truth safe</p>
-              </div>
-              {/* Observability card — sky, live log stream */}
-              <div className="absolute bottom-8 right-6 w-52 overflow-hidden rounded-3xl border border-sky-500/40 bg-sky-900/25 p-4 max-sm:static max-sm:w-full sm:bottom-12 sm:right-8">
-                <p className="mono text-xs text-sky-400">observability</p>
-                <div className="mt-2 space-y-1 overflow-hidden">
-                  {[0, 1].map((offset) => {
-                    const line = LOG_LINES[(logHead + offset) % LOG_LINES.length];
-                    return (
-                      <AnimatePresence key={`${logHead}-${offset}`} mode="wait">
-                        <motion.p
-                          key={`${logHead}-${offset}`}
-                          initial={{ opacity: 0, x: 8 }}
-                          animate={{ opacity: offset === 0 ? 1 : 0.45 }}
-                          transition={{ duration: 0.3, delay: offset * 0.05 }}
-                          className={`mono truncate text-[0.58rem] leading-4 ${line.color}`}
-                        >
-                          <span className="text-zinc-600">{line.level} </span>{line.msg}
-                        </motion.p>
-                      </AnimatePresence>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </div>
-
-      <a
-        href="#system"
-        aria-label="Scroll to system section"
-        className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 rounded-full border border-white/[0.08] p-3 text-zinc-500 transition hover:border-white/20 hover:text-zinc-300 md:block"
-      >
-        <ArrowDown size={18} />
-      </a>
     </section>
   );
 }

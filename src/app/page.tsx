@@ -9,12 +9,9 @@ import { Hero } from "@/components/hero";
 import { Navbar } from "@/components/navbar";
 import { Projects } from "@/components/projects";
 import { SmoothScroll } from "@/components/smooth-scroll";
-import { SystemFlow } from "@/components/system-flow";
 import { TechStack } from "@/components/stack";
-import { TechnicalNotes } from "@/components/notes";
 import { Education } from "@/components/education";
 import { SiteStack } from "@/components/site-stack";
-import { ValueProps } from "@/components/value-props";
 
 export default function Home() {
   return (
@@ -25,16 +22,13 @@ export default function Home() {
       <AmbientParticles />
       <div className="relative" style={{ zIndex: 2 }}>
         <Navbar />
-        <main>
+        <main id="main-content">
           <Hero />
           <About />
-          <SystemFlow />
           <Projects />
-          <ValueProps />
           <CareerTimeline />
           <TechStack />
           <Education />
-          <TechnicalNotes />
           <Contact />
         </main>
         <SiteStack />
