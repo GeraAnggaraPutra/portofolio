@@ -1,31 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight, Check, ChevronRight } from "lucide-react";
 
 const workflows = [
   {
-    id: "attendance", label: "Attendance", number: "01",
-    headline: "A clock event that survives a lost connection.",
-    description: "Shift and location rules stay authoritative. Offline events carry a scoped token and signature, then rejoin the same clock processing flow after validation and deduplication.",
-    stages: ["Shift context", "Signed event", "Safe sync", "Payroll input"],
-    outcome: "Online and offline attendance",
+    id: "architecture", label: "Architecture", number: "01",
+    headline: "Clear boundaries make complex work maintainable.",
+    description: "Across HRIS, parking, and operational platforms, I focus on who owns each rule, where an action is processed, and how services exchange trusted context.",
+    stages: ["Entry point", "Identity", "Domain rules", "Outcome"],
+    outcome: "Service ownership and secure access",
   },
   {
-    id: "payroll", label: "Payroll", number: "02",
-    headline: "The right result, with a trail back to the rule.",
-    description: "Effective-dated inputs flow through ordered formulas and TER-based tax handling. Results are saved as snapshots; progress and employee-level failures stay visible.",
-    stages: ["Dated inputs", "Formula graph", "Tax modes", "Result snapshot"],
-    outcome: "Auditable payroll processing",
+    id: "workflows", label: "Workflows", number: "02",
+    headline: "Reliable actions beyond the happy path.",
+    description: "Attendance sync, approvals, payroll, and integrations all need explicit validation, consistent updates, and a way to recover when a request is repeated or a dependency fails.",
+    stages: ["Validate", "Process", "Retry safely", "Reconcile"],
+    outcome: "Transactions, recovery, and consistency",
   },
   {
-    id: "patrol", label: "Patrol", number: "03",
-    headline: "Field evidence, from assignment to inspection.",
-    description: "Area and asset rules become an authorized round. The mobile flow validates QR scans, records evidence, and synchronizes inspections safely when connectivity returns.",
-    stages: ["Round setup", "QR validation", "Inspection", "Safe sync"],
-    outcome: "End-to-end feature ownership",
+    id: "operations", label: "Operations", number: "03",
+    headline: "Production should explain itself.",
+    description: "I connect request IDs, structured logs, metrics, dashboards, and alerts so teams can trace a failure from a user report to the service and action behind it.",
+    stages: ["Instrument", "Observe", "Investigate", "Improve"],
+    outcome: "Visibility after release",
   },
 ] as const;
 
@@ -53,11 +52,11 @@ export function Hero() {
               I&apos;m Gera Anggara Putra. I build Go services for HRIS, payments, and operations where correctness, resilience, and clear production signals matter.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 sm:mt-10">
-              <Link href="/projects/unara-people" className="group inline-flex min-h-12 items-center gap-2 rounded-full bg-amber-300 px-5 text-sm font-semibold text-[#17120b] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
-                Explore flagship case study <ArrowUpRight size={17} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
-              </Link>
-              <a href="#projects" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/20 bg-white/[0.035] px-5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
-                Selected work <ArrowDownRight size={17} aria-hidden="true" />
+              <a href="#projects" className="group inline-flex min-h-12 items-center gap-2 rounded-full bg-amber-300 px-5 text-sm font-semibold text-[#17120b] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+                Explore selected work <ArrowDownRight size={17} className="transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" aria-hidden="true" />
+              </a>
+              <a href="#contact" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/20 bg-white/[0.035] px-5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+                Get in touch <ArrowUpRight size={17} aria-hidden="true" />
               </a>
             </div>
             <div className="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-5 text-xs text-zinc-500 sm:mt-16">
@@ -70,10 +69,10 @@ export function Hero() {
             <div aria-hidden="true" className="absolute -inset-5 -z-10 rounded-[2.4rem] bg-amber-400/[0.05] blur-3xl" />
             <div className="overflow-hidden rounded-[1.6rem] border border-amber-200/20 bg-[#15130f]/95 shadow-[0_34px_100px_rgba(0,0,0,0.4)]">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-5 py-4 sm:px-6">
-                <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(252,211,77,0.7)]" /><p className="mono text-[0.65rem] uppercase tracking-[0.2em] text-amber-200">Inside the system</p></div>
-                <span className="mono text-[0.6rem] uppercase tracking-[0.16em] text-zinc-500">UNARA People / selected flows</span>
+                <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(252,211,77,0.7)]" /><p className="mono text-[0.65rem] uppercase tracking-[0.2em] text-amber-200">How I build</p></div>
+                <span className="mono text-[0.6rem] uppercase tracking-[0.16em] text-zinc-500">Across selected work</span>
               </div>
-              <div className="flex gap-1 overflow-x-auto border-b border-white/10 p-2 scrollbar-hide" role="tablist" aria-label="Explore UNARA People backend workflows">
+              <div className="flex gap-1 overflow-x-auto border-b border-white/10 p-2 scrollbar-hide" role="tablist" aria-label="Explore backend engineering approach">
                 {workflows.map((item, index) => (
                   <button key={item.id} type="button" id={`workflow-tab-${item.id}`} role="tab" aria-selected={selected === index} aria-controls="workflow-panel" tabIndex={selected === index ? 0 : -1} onClick={() => setSelected(index)} onKeyDown={(event) => {
                     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
@@ -104,8 +103,8 @@ export function Hero() {
                 </AnimatePresence>
               </div>
               <div className="flex items-center justify-between gap-4 border-t border-white/10 px-5 py-3 sm:px-7">
-                <span className="mono text-[0.6rem] uppercase tracking-[0.14em] text-zinc-500">Conceptual flow · based on implemented backend</span>
-                <Link href="/projects/unara-people" className="shrink-0 text-xs font-medium text-amber-200 hover:text-amber-100">Full story ↗</Link>
+                <span className="mono text-[0.6rem] uppercase tracking-[0.14em] text-zinc-500">Principles drawn from shipped systems</span>
+                <a href="#projects" className="shrink-0 text-xs font-medium text-amber-200 hover:text-amber-100">See the work ↗</a>
               </div>
             </div>
           </div>
