@@ -51,6 +51,7 @@ export type SkillGroup = {
 export const navItems = [
   { label: "About", href: "#about" },
   { label: "Projects", href: "#projects" },
+  { label: "Playground", href: "#lab" },
   { label: "Experience", href: "#experience" },
   { label: "Stack", href: "#stack" },
   { label: "Contact", href: "#contact" },

@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@keyframes network-packet {
+  to { stroke-dashoffset: -92; }
+}
+.network-signal {
+  animation: network-packet 1.4s linear 2;
+}
+
 :root {
   --background: #0d0c0a;
   --foreground: #f0ede8;

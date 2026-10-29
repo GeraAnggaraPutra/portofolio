@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Github } from "lucide-react";
 import { projects, type Project } from "@/data/portfolio";
 import { SectionHeader } from "./section-header";
-import { Stagger, StaggerItem } from "./reveal";
 import { DetailModal } from "./detail-modal";
 import { ProjectLinks } from "./project-links";
 
@@ -63,9 +62,9 @@ export function Projects() {
         <span className="mono text-[0.65rem] uppercase tracking-[0.18em] text-zinc-500">{remaining.length} projects</span>
       </div>
 
-      <Stagger className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
+      <div id="project-archive" className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
         {remaining.slice(0, showAll ? undefined : 5).map((project, index) => (
-          <StaggerItem key={project.title}>
+          <div key={project.title}>
             <motion.article
               onHoverStart={() => { if (!window.matchMedia("(pointer: coarse)").matches) setExpandedIdx(index); }}
               onHoverEnd={() => setExpandedIdx(null)}
@@ -174,9 +173,9 @@ export function Projects() {
                 </div>
               )}
             </motion.article>
-          </StaggerItem>
+          </div>
         ))}
-      </Stagger>
+      </div>
 
       {!showAll && remaining.length > 5 && (
         <div className="mt-8 flex justify-center">

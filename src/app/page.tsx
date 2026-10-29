@@ -6,12 +6,12 @@ import { Contact } from "@/components/contact";
 import { CareerTimeline } from "@/components/career-timeline";
 import { Footer } from "@/components/footer";
 import { Hero } from "@/components/hero";
+import { IncidentLab } from "@/components/incident-lab";
 import { Navbar } from "@/components/navbar";
 import { Projects } from "@/components/projects";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { TechStack } from "@/components/stack";
 import { Education } from "@/components/education";
-import { SiteStack } from "@/components/site-stack";
 
 export default function Home() {
   return (
@@ -26,12 +26,12 @@ export default function Home() {
           <Hero />
           <About />
           <Projects />
+          <IncidentLab />
           <CareerTimeline />
           <TechStack />
           <Education />
           <Contact />
         </main>
-        <SiteStack />
         <Footer />
       </div>
     </>
