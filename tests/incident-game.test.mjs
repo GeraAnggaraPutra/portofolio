@@ -62,3 +62,15 @@ test('incident reports explain overload separately from dependency damage', () =
   assert.equal(protectedState.reports.at(-1).overloadDamage, 23);
   assert.equal(protectedState.reports.at(-1).incidentDamage, 0);
 });
+
+
+test('decision previews never spend credits or mutate the active campaign', () => {
+  const state = { ...newGame(), round: 2, selected: 'shield' };
+  const original = structuredClone(state);
+  const preview = gameReducer(state, { type: 'run' });
+  assert.deepEqual(state, original);
+  assert.notStrictEqual(preview.reports, state.reports);
+  assert.equal(preview.shield, true);
+  assert.equal(state.shield, false);
+  assert.deepEqual(gameReducer(state, { type: 'run' }), preview);
+});

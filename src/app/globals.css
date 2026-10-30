@@ -148,3 +148,42 @@ a {
     transition-duration: 0.001ms !important;
   }
 }
+
+@keyframes command-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.command-reveal { animation: command-reveal 350ms ease-out both; }
+
+/* Keep the infrastructure legible inside both narrow cards and phones. */
+.network-scene {
+  container-type: inline-size;
+  background-image: radial-gradient(ellipse at 50% 35%, rgba(34, 211, 238, .12), transparent 72%);
+}
+.network-map-wide { display: block; }
+.network-map-compact { display: none; }
+.network-node-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@container (max-width: 600px) {
+  .network-map-wide { display: none; }
+  .network-map-compact { display: block; }
+  .network-node-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Static atmosphere replaces the desktop canvas without a mobile render loop. */
+@media (pointer: coarse), (max-width: 767px), (prefers-reduced-motion: reduce) {
+  body {
+    background-image:
+      radial-gradient(ellipse at 100% 0%, rgba(180, 119, 38, .18), transparent 30rem),
+      radial-gradient(ellipse at 0% 38rem, rgba(25, 115, 130, .12), transparent 32rem),
+      linear-gradient(180deg, #100e0b, #0b0a08);
+  }
+  body::before {
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle, rgba(251, 211, 141, .28) 1px, transparent 1.5px),
+      linear-gradient(30deg, transparent 49.5%, rgba(210, 171, 106, .045) 50%, transparent 50.5%),
+      linear-gradient(150deg, transparent 49.5%, rgba(210, 171, 106, .045) 50%, transparent 50.5%);
+    background-size: 83px 113px, 64px 112px, 64px 112px;
+    mask-image: linear-gradient(to bottom, black, transparent 90%);
+  }
+}
