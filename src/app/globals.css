@@ -243,3 +243,9 @@ a {
 @keyframes click-ring { to { transform: scale(5); opacity: 0; } }
 @keyframes click-spark { from { transform: translate(0,0) scale(1); opacity: 1; } to { transform: translate(var(--x), var(--y)) scale(.1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .click-effects { display: none; } .crystal-action { transition: none; } }
+
+.serenity-card { background: radial-gradient(ellipse at 50% 35%, #344b43, #1b2b26 60%, #121e1b); }
+.serenity-card button[aria-pressed="true"] { background: #b6cba522; border-color: #b6cba588; color: #e7f1dd; }
+html[data-calm="true"] .ambient-light { animation-duration: 65s; opacity: .65; }
+html[data-calm="true"] .ambient-ember { animation-duration: 60s; }
+.click-burst-calm .click-burst-ring { border-color: #b8d5c4; animation-duration: 1400ms; }

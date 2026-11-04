@@ -68,7 +68,8 @@ export function CrystalObservatory() {
         const render = (now:number) => {
           frame=0;
           if(cancelled||!visible||document.hidden||scrolling)return;
-          const dt=Math.min((now-last)/1000 || .016,.04);last=now;
+          const speed=document.documentElement.dataset.calm === "true" ? .25 : 1;
+          const dt=Math.min((now-last)/1000 || .016,.04)*speed;last=now;
           const still=motion.matches||manualPause;
           const blend=still?1:1-Math.exp(-dt*7);
           radius+=(targetRadius-radius)*blend;

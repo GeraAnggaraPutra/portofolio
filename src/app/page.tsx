@@ -1,4 +1,5 @@
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
+import { SerenityGallery } from "@/components/serenity-gallery";
 import { About } from "@/components/about";
 import { Contact } from "@/components/contact";
 import { CareerTimeline } from "@/components/career-timeline";
@@ -21,6 +22,7 @@ export default function Home() {
           <About />
           <Projects />
           <CrystalObservatory />
+          <SerenityGallery />
           <CareerTimeline />
           <TechStack />
           <Education />

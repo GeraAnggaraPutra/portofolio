@@ -15,13 +15,14 @@ export function AmbientBackdrop() {
       const layer = sparks.current;
       while (layer.children.length >= 4) layer.firstElementChild?.remove();
       const group = document.createElement("div");
-      group.className = "click-burst";
+      const calm = document.documentElement.dataset.calm === "true";
+      group.className = calm ? "click-burst click-burst-calm" : "click-burst";
       group.style.left = `${event.clientX}px`;
       group.style.top = `${event.clientY}px`;
       const ring = document.createElement("i");
       ring.className = "click-burst-ring";
       group.appendChild(ring);
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < (calm ? 0 : 14); i++) {
         const particle = document.createElement("i");
         const angle = i / 14 * Math.PI * 2;
         const distance = 45 + (i % 3) * 22;
