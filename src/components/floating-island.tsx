@@ -23,6 +23,9 @@ export function FloatingIsland() {
         if (disposed) return;
         const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
         renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+        renderer.domElement.style.display = "block";
+        renderer.domElement.style.width = "100%";
+        renderer.domElement.style.height = "100%";
         el.appendChild(renderer.domElement);
         const scene = new T.Scene();
         const camera = new T.PerspectiveCamera(40, 1, .1, 100);
@@ -60,7 +63,17 @@ export function FloatingIsland() {
         const down=(e:PointerEvent)=>{downX=e.clientX;downY=e.clientY;};
         const pick=(e:PointerEvent)=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>6)return; const rect=el.getBoundingClientRect();const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=ray.intersectObjects(scene.children,true)[0];if(hit&&details[hit.object.name])inspect(hit.object.name);};
         renderer.domElement.addEventListener("pointerdown",down);renderer.domElement.addEventListener("pointerup",pick);
-        const resize=new ResizeObserver(()=>{renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();render();});resize.observe(el);
+        const fit = () => {
+          const width = el.clientWidth, height = el.clientHeight;
+          if (!width || !height) return;
+          renderer.setSize(width, height, false);
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+          render();
+        };
+        const resize = new ResizeObserver(fit);
+        resize.observe(el);
+        fit();
         const visibility=new IntersectionObserver(([e])=>{visible=e.isIntersecting;render();});visibility.observe(el);
         let dark=false;
         api.current={rotate:(angle)=>{camera.position.sub(controls.target).applyAxisAngle(new T.Vector3(0,1,0),angle).add(controls.target);controls.update();render();},night:()=>{dark=!dark;ambient.intensity=dark?.65:2.4;sun.intensity=dark?.6:3;sun.color.set(dark?0x9dbbff:0xffdcad);mat("#ffd78a").emissive.set(dark?0xffa144:0x000000);render();},zoom:(factor)=>{camera.position.sub(controls.target).multiplyScalar(factor).clampLength(8,24).add(controls.target);controls.update();render();},reset:()=>{camera.position.set(10,8,12);controls.update();render();},interact:(value)=>{controls.enabled=value;renderer.domElement.style.touchAction=value?"none":"pan-y";},inspect};
@@ -73,7 +86,11 @@ export function FloatingIsland() {
   const button="disabled:opacity-40 min-h-11 rounded-full border border-white/20 px-4 py-2 text-xs text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-amber-200";
   return <section id="island" className="container-x py-20 sm:py-28" aria-labelledby="island-title"><p className="mono text-xs uppercase tracking-[.2em] text-amber-200">Beyond the everyday / Interactive world</p><h2 id="island-title" className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">A little world<br/><span className="text-amber-200">to explore.</span></h2><p className="mt-5 max-w-lg text-sm leading-7 text-zinc-400">Take a breath above the clouds. Wander around a floating island, find a quiet cabin, and watch the light change.</p>
     <div className={`mt-8 overflow-hidden rounded-[2rem] border border-white/15 ${night?"bg-[#101a30]":"bg-[#233c48]"}`}><div className="flex flex-wrap items-center justify-between gap-3 p-5"><span className="mono text-xs text-white/60">THE SKY GARDEN / 01</span><button className={button} disabled={!!status} type="button" aria-pressed={night} onClick={()=>{api.current?.night();setNight(!night);}}>{night?"Bring back daylight":"Switch to moonlight"}</button></div>
-    <div ref={host} className="relative h-[360px] sm:h-[540px]" role="img" aria-label="Interactive floating island with a cabin, evergreen forest, clouds and waterfall">{status&&<p className="absolute inset-0 grid place-items-center p-8 text-center text-sm text-white/70">{status}</p>}</div>
+    <div className="relative h-[360px] sm:h-[540px]">
+      {/* Three.js exclusively owns this empty host. React status updates must not clear its canvas. */}
+      <div ref={host} className="absolute inset-0" role="img" aria-label="Interactive floating island with a cabin, evergreen forest, clouds and waterfall" />
+      {status ? <p role="status" className="pointer-events-none absolute inset-0 grid place-items-center p-8 text-center text-sm text-white/70">{status}</p> : null}
+    </div>
     <div className="flex flex-wrap justify-center gap-2 px-4"><button className={button} disabled={!!status} type="button" aria-pressed={active} onClick={()=>{api.current?.interact(!active);setActive(!active);}}>{active?"Finish exploring · enable scroll":"Explore · drag to rotate"}</button><button className={button} disabled={!!status} type="button" onClick={()=>api.current?.zoom(.85)}>Zoom in</button><button className={button} disabled={!!status} type="button" onClick={()=>api.current?.zoom(1.15)}>Zoom out</button><button className={button} disabled={!!status} type="button" onClick={()=>api.current?.rotate(-.3)}>Rotate left</button><button className={button} disabled={!!status} type="button" onClick={()=>api.current?.rotate(.3)}>Rotate right</button><button className={button} disabled={!!status} type="button" onClick={()=>api.current?.reset()}>Reset view</button></div>
     <p className="px-5 pt-3 text-center text-xs text-white/50">{active?"Drag to orbit. Finish exploring to scroll over the scene again.":"Scroll freely. Enable Explore when you want to rotate the island."}</p>
     <div className="m-5 rounded-2xl border border-white/10 bg-black/15 p-5"><div className="flex flex-wrap gap-2">{["Cabin","Forest","Waterfall"].map(name=><button type="button" className={button} key={name} onClick={()=>{const fallback:Record<string,string>={Cabin:"A warm hilltop cabin above the clouds.",Forest:"An evergreen grove surrounding the island.",Waterfall:"A turquoise stream falling into the sky."};setNote(fallback[name]);api.current?.inspect(name);}}>{name}</button>)}</div><p aria-live="polite" className="mt-4 min-h-12 text-sm leading-7 text-white/70">{note}</p></div></div></section>;

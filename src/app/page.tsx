@@ -1,3 +1,4 @@
+import { AmbientBackdrop } from "@/components/ambient-backdrop";
 import { About } from "@/components/about";
 import { Contact } from "@/components/contact";
 import { CareerTimeline } from "@/components/career-timeline";
@@ -12,6 +13,7 @@ import { Education } from "@/components/education";
 export default function Home() {
   return (
     <>
+      <AmbientBackdrop />
       <div className="relative" style={{ zIndex: 2 }}>
         <Navbar />
         <main id="main-content">
