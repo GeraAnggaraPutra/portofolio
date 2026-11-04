@@ -149,25 +149,6 @@ a {
   }
 }
 
-@keyframes command-reveal {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.command-reveal { animation: command-reveal 350ms ease-out both; }
-
-/* Keep the infrastructure legible inside both narrow cards and phones. */
-.network-scene {
-  container-type: inline-size;
-  background-image: radial-gradient(ellipse at 50% 35%, rgba(34, 211, 238, .12), transparent 72%);
-}
-.network-map-wide { display: block; }
-.network-map-compact { display: none; }
-.network-node-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-@container (max-width: 600px) {
-  .network-map-wide { display: none; }
-  .network-map-compact { display: block; }
-  .network-node-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 /* Static atmosphere replaces the desktop canvas without a mobile render loop. */
 @media (pointer: coarse), (max-width: 767px), (prefers-reduced-motion: reduce) {
   body {
@@ -187,24 +168,3 @@ a {
     mask-image: linear-gradient(to bottom, black, transparent 90%);
   }
 }
-
-.cabinet-card { background: radial-gradient(ellipse at 50% 35%, #173246, #080f19 65%); }
-.cabinet-stage { height: 350px; display: grid; place-items: center; perspective: 850px; overflow: hidden; }
-.cabinet-body { position: relative; width: 180px; height: 250px; transform-style: preserve-3d; transform: rotateX(-12deg) rotateY(var(--cabinet-angle)); transition: transform 180ms ease-out; }
-.cabinet-front { position: absolute; inset: 0; background: linear-gradient(100deg,#263644,#101c28); border: 1px solid #607383; padding: 14px 10px; transform: translateZ(50px); transform-style: preserve-3d; }
-.cabinet-side { position: absolute; width: 100px; height: 250px; background: repeating-linear-gradient(0deg,#172432 0 7px,#203240 8px 9px); border: 1px solid #526779; }
-.cabinet-left { left: -50px; transform: rotateY(-90deg); }
-.cabinet-right { right: -50px; transform: rotateY(90deg); }
-.cabinet-top { position: absolute; width: 180px; height: 100px; top: -50px; transform: rotateX(90deg); background: linear-gradient(120deg,#637583,#344956); border: 1px solid #8b9daa; }
-.cabinet-back { position:absolute; inset:0; transform:translateZ(-50px); background:#101c28; }
-.cabinet-badge { font: 8px monospace; letter-spacing: 1px; color:#bdcbd6; margin: 3px 0 15px; }
-.cabinet-module { position:relative; display:block; width:100%; height:36px; margin:8px 0; transform-style:preserve-3d; transition:transform 450ms cubic-bezier(.2,.7,.2,1); cursor:pointer; }
-.cabinet-module:focus-visible { outline:2px solid #a5f3fc; outline-offset:3px; }
-.cabinet-module-face { position:absolute; inset:0; display:flex; align-items:center; justify-content:space-around; border:1px solid #617889; background:linear-gradient(#3c5262,#1a2c39); border-radius:2px; }
-.cabinet-tray { position:absolute; width:100%; height:60px; top:-30px; transform:rotateX(90deg) translateY(-30px); background:repeating-linear-gradient(90deg,#283b37 0 12px,#56766a 13px 14px); border:1px solid #68877d; }
-.cabinet-screw { width:3px; height:3px; border-radius:50%; background:#b5c3cb; box-shadow:0 0 0 1px #101923; }
-.cabinet-grip { width:5px; height:22px; border:1px solid #90a1ad; border-radius:2px; background:#182530; }
-.cabinet-vents { display:flex; gap:3px; }.cabinet-vents i { width:3px; height:19px; background:#0a131c; border-bottom:1px solid #5b6c78; }
-.cabinet-led { width:4px; height:4px; border-radius:50%; box-shadow:0 0 8px #67e8f944; }
-.cabinet-meter { height:4px; margin-top:13px; background:#080f19; }.cabinet-meter span { display:block; height:100%; background:#a5f3fc; transition:width 300ms; }
-.cabinet-foot { position:absolute; bottom:-10px; width:24px; height:10px; background:#0b141d; border:1px solid #3b4c58; }.cabinet-foot-left { left:10px; }.cabinet-foot-right { right:10px; }
