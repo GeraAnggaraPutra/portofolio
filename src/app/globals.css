@@ -182,8 +182,8 @@ a {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(30deg, transparent 49.5%, rgba(212, 174, 105, .055) 50%, transparent 50.5%),
-    linear-gradient(150deg, transparent 49.5%, rgba(212, 174, 105, .055) 50%, transparent 50.5%);
+    linear-gradient(30deg, transparent 49.5%, rgba(212, 174, 105, .09) 50%, transparent 50.5%),
+    linear-gradient(150deg, transparent 49.5%, rgba(212, 174, 105, .09) 50%, transparent 50.5%);
   background-size: 80px 140px;
   mask-image: linear-gradient(black, transparent 85%);
 }
@@ -196,11 +196,11 @@ a {
 }
 .ambient-light-gold {
   top: -10%; left: -10%;
-  background: radial-gradient(ellipse, rgba(198, 137, 54, .16), transparent 68%);
+  background: radial-gradient(ellipse, rgba(198, 137, 54, .32), transparent 68%);
 }
 .ambient-light-blue {
   right: -12%; bottom: 2%;
-  background: radial-gradient(ellipse, rgba(47, 134, 153, .10), transparent 68%);
+  background: radial-gradient(ellipse, rgba(47, 134, 153, .24), transparent 68%);
   animation-delay: -16s;
   animation-duration: 36s;
   animation-direction: alternate-reverse;
@@ -230,3 +230,16 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .ambient-backdrop * { animation: none !important; }
 }
+
+.crystal-stage { background: radial-gradient(ellipse at 50% 35%, #173047 0%, #10162a 38%, #080c16 78%); }
+.crystal-action { background: linear-gradient(140deg, #18324288, #11172b); transition: transform 180ms, border-color 180ms, background-color 180ms; }
+.crystal-action:hover { transform: translateY(-3px); border-color: #a5f3fc99; }
+.crystal-action:active { transform: scale(.97); }
+.click-effects { position: fixed; inset: 0; z-index: 10001; pointer-events: none; overflow: hidden; contain: strict; }
+.click-burst { position: absolute; width: 0; height: 0; }
+.click-burst-ring { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border: 1px solid #f5d18e; border-radius: 50%; animation: click-ring 800ms ease-out forwards; }
+.click-burst-spark { position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; border-radius: 50%; background: #ffe0a3; animation: click-spark 750ms cubic-bezier(.1,.6,.2,1) forwards; }
+.click-burst-spark:nth-child(3n) { background: #83e8ea; }
+@keyframes click-ring { to { transform: scale(5); opacity: 0; } }
+@keyframes click-spark { from { transform: translate(0,0) scale(1); opacity: 1; } to { transform: translate(var(--x), var(--y)) scale(.1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .click-effects { display: none; } .crystal-action { transition: none; } }
