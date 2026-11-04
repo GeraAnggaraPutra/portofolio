@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Globe2, ShieldCheck, Server, Database } from "lucide-react";
+import { ServerCabinet } from "./server-cabinet";
 import { waves, type Game } from "@/lib/incident-game";
 
 export function NetworkScene({ game }: { game: Game }) {
@@ -19,7 +20,7 @@ export function NetworkScene({ game }: { game: Game }) {
   const color = healthy ? "#67e8f9" : "#fb7185";
   const workerCount = 1 + Math.round((game.capacity - 60 - (game.cache ? 40 : 0)) / 25);
 
-  return <div className="network-scene mb-6 overflow-hidden rounded-3xl border border-cyan-200/15 bg-[#060d17]">
+  return <><ServerCabinet game={game} /><div className="network-scene mb-6 overflow-hidden rounded-3xl border border-cyan-200/15 bg-[#060d17]">
     <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 sm:px-7"><p className="mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan-200">Infrastructure / inspect a node</p><span className={`mono text-[0.6rem] uppercase tracking-widest ${healthy ? "text-emerald-300" : "text-rose-300"}`}>{healthy ? game.phase === "plan" ? "Planning view" : "Wave resolved" : "Service offline"}</span></div>
     {[false, true].map(compact => {
       const uid = `${sceneId}-${compact ? "compact" : "wide"}`;
@@ -49,5 +50,5 @@ export function NetworkScene({ game }: { game: Game }) {
     </svg>; })}
     <div className="network-node-controls grid grid-cols-2 gap-2 px-4 sm:px-7" role="group" aria-label="Inspect infrastructure components">{nodes.map((node, i) => <button type="button" key={node.name} aria-pressed={selected === i} onClick={() => setSelected(i)} className={`flex min-h-16 min-w-0 items-center gap-2 rounded-xl border px-3 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200 ${selected === i ? "border-cyan-200/40 bg-cyan-200/10" : "border-white/10 hover:bg-white/5"}`}><node.icon className="shrink-0 text-cyan-200" size={18} /><span className="min-w-0 break-words"><span className="block text-xs font-semibold text-white">{node.name}</span><span className="mt-1 block text-[0.65rem] text-zinc-400">{node.status}</span></span></button>)}</div>
     <p className="min-h-24 px-5 py-5 text-sm leading-6 text-zinc-400 sm:px-7" aria-live="polite">{nodes[selected].detail}</p>
-  </div>;
+  </div></>;
 }
