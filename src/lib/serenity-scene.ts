@@ -1,7 +1,7 @@
 import * as T from "three";
 
 export type Season = "Spring" | "Summer" | "Autumn" | "Winter";
-export type Sanctuary = "pond" | "bonsai";
+export type Sanctuary = "pond" | "bonsai" | "jellyfish" | "fireflies";
 export function createSerenityScene(host: HTMLDivElement) {
   const renderer = new T.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -47,14 +47,32 @@ export function createSerenityScene(host: HTMLDivElement) {
   const trunkPoints=[new T.Vector3(0,-.2,0),new T.Vector3(-.3,.6,0),new T.Vector3(.08,1.35,.1),new T.Vector3(-.2,2.15,0)];
   mesh(tree,new T.TubeGeometry(new T.CatmullRomCurve3(trunkPoints),24,.16,8,false),bark);
   const foliageMat=material("#b6c995");
-  const foliage:T.Mesh[]=[];
+  const leafHomes: T.Vector3[] = [];
+  const leafGeometry = new T.SphereGeometry(.11, 6, 4); geometries.push(leafGeometry);
+  const leafInstances = new T.InstancedMesh(leafGeometry, foliageMat, 180); tree.add(leafInstances);
+  const dummy = new T.Object3D();
+  const snowMat = material("#e2e8df");
+  const snowGeometry = new T.SphereGeometry(.025, 5, 4); geometries.push(snowGeometry);
+  const snowfall = new T.InstancedMesh(snowGeometry, snowMat, 70); tree.add(snowfall); snowfall.visible=false;
   for(let i=0;i<9;i++){
     const a=i*2.399,y=.8+i*.15,r=.9-i*.055;
     const end=new T.Vector3(Math.cos(a)*r,y+.4,Math.sin(a)*r);
     mesh(tree,new T.TubeGeometry(new T.CatmullRomCurve3([new T.Vector3(-.1,y-.2,0),new T.Vector3(end.x*.5,y+.1,end.z*.5),end]),8,.055,6,false),bark);
-    const leaves=mesh(tree,new T.IcosahedronGeometry(.55,1),foliageMat,end.x,end.y,end.z);leaves.scale.set(1.2,.6,1);foliage.push(leaves);
+    for(let j=0;j<20;j++){const a=j*2.399, r=.18+Math.sqrt(j/20)*.5; leafHomes.push(end.clone().add(new T.Vector3(Math.cos(a)*r,Math.sin(j*1.7)*.22,Math.sin(a)*r)));}
   }
   for(let i=0;i<5;i++){const a=i*1.25;mesh(tree,new T.DodecahedronGeometry(.14),stone,Math.cos(a)*.85,-.1,Math.sin(a)*.6);}
+  const jellyWorld=new T.Group(), grove=new T.Group(); scene.add(jellyWorld,grove); jellyWorld.visible=false;grove.visible=false;
+  const jellyMat=new T.MeshStandardMaterial({color:0xa9c9ec,emissive:0x5976b4,emissiveIntensity:.6,transparent:true,opacity:.7,side:T.DoubleSide,roughness:.3,depthWrite:false});materials.push(jellyMat);
+  const tentacleMat=material("#b3a2d2");tentacleMat.emissive.setHex(0x463966);
+  const jellies=Array.from({length:3},(_,i)=>{const g=new T.Group();jellyWorld.add(g);g.position.set((i-1)*1.8,.9+(i%2)*.7,-(i%2));const bell=mesh(g,new T.SphereGeometry(.65,24,12,0,Math.PI*2,0,Math.PI/2),jellyMat);for(let k=0;k<8;k++){const a=k*Math.PI/4;const points=Array.from({length:8},(_,j)=>new T.Vector3(Math.cos(a)*(.45-j*.025)+Math.sin(j*.8)*.12,-j*.25,Math.sin(a)*(.45-j*.025)));mesh(g,new T.TubeGeometry(new T.CatmullRomCurve3(points),18,.018,4,false),tentacleMat);}const rim=mesh(g,new T.TorusGeometry(.64,.025,6,48),tentacleMat);rim.rotation.x=Math.PI/2;return {g,bell};});
+  mesh(grove,new T.CylinderGeometry(2.8,2.5,.3,48),moss,0,-.35);
+  for(let i=0;i<7;i++){const a=i*2.399,x=Math.cos(a)*2.2,z=Math.sin(a)*2.2;mesh(grove,new T.CylinderGeometry(.07,.13,2.5+i%2,7),bark,x,1,z);mesh(grove,new T.ConeGeometry(.65,1.4,8),moss,x,2.4,z);}
+  const glowMat=new T.MeshBasicMaterial({color:0xe0ed9b});materials.push(glowMat);
+  const glowGeometry=new T.SphereGeometry(.035,6,4);geometries.push(glowGeometry);
+  const fireflies=new T.InstancedMesh(glowGeometry,glowMat,80);grove.add(fireflies);
+  const moon=mesh(grove,new T.SphereGeometry(.35,20,12),glowMat,0,3,-2);
+  moon.scale.setScalar(.8);
+  let currentSeason:Season="Summer", seasonStart=0, breeze=0, pulse=0, gathered=false;
   let mode:Sanctuary="pond", paused=false, visible=true, disposed=false, scrolling=false;
   let frame=0, last=0, time=0, rippleAge=10, attraction=0, rotation=0, currentRotation=0;
   let scrollTimer:ReturnType<typeof setTimeout>|undefined;
@@ -66,7 +84,7 @@ export function createSerenityScene(host: HTMLDivElement) {
     if(now-last<32&&!motion.matches&&!paused){frame=requestAnimationFrame(draw);return;}
     last=now;
     const moving=!paused&&!motion.matches;
-    if(moving){time+=dt;rippleAge+=dt;attraction=Math.max(0,attraction-dt);}
+    if(moving){time+=dt*(document.documentElement.dataset.calm === "true" ? .65 : 1);breeze=Math.max(0,breeze-dt*.3);pulse=Math.max(0,pulse-dt*.5);rippleAge+=dt;attraction=Math.max(0,attraction-dt);}
     if(mode==="pond"){
       fish.forEach(({group,tail,angle},i)=>{
         const a=angle+time*(.13+i*.013),r=1.45+(i%3)*.2;
@@ -75,7 +93,24 @@ export function createSerenityScene(host: HTMLDivElement) {
         if(moving){const delta=goal.clone().sub(group.position);if(delta.lengthSq()>.001)group.rotation.y=Math.atan2(delta.x,delta.z);group.position.lerp(goal,1-Math.exp(-dt*.7));tail.rotation.z=Math.sin(time*3+i)*.25;}
       });
       ripple.visible=rippleAge<3;ripple.scale.setScalar(.12+rippleAge*.55);rippleMat.opacity=Math.max(0,(1-rippleAge/3)*.6);
-    }else {currentRotation+=(rotation-currentRotation)*(moving?1-Math.exp(-dt*5):1);tree.rotation.y=currentRotation+(moving?Math.sin(time*.1)*.08:0);}
+    }else if(mode==="bonsai") {currentRotation+=(rotation-currentRotation)*(moving?1-Math.exp(-dt*5):1);tree.rotation.y=currentRotation+(moving?Math.sin(time*.1)*.08:0);}
+    if(mode==="bonsai"){
+      const elapsed=time-seasonStart;
+      leafHomes.forEach((home,i)=>{
+        dummy.position.copy(home);dummy.rotation.set(i*.7,i*2.3,Math.sin(time+i)*.1);let size=1;
+        if(currentSeason==="Winter")size=0;
+        if(currentSeason==="Spring")size=.35+.65*Math.min(1,elapsed*.35);
+        const falling=(currentSeason==="Autumn"&&i%3!==0)||(currentSeason==="Spring"&&i%9===0)||breeze>0&&i%5===0;
+        if(falling){const travel=(elapsed*.32+i*.137)%3.5;dummy.position.y=Math.max(-.1,home.y-travel);dummy.position.x+=Math.sin(i+time)*.15+travel*.22;dummy.rotation.z=time+i;}
+        dummy.scale.set(.8*size,.22*size,1.6*size);dummy.updateMatrix();leafInstances.setMatrixAt(i,dummy.matrix);
+      });leafInstances.instanceMatrix.needsUpdate=true;
+      snowfall.visible=currentSeason==="Winter";
+      if(snowfall.visible)for(let i=0;i<70;i++){dummy.position.set(Math.sin(i*2.399)*1.65+Math.sin(time+i)*.1,3.6-((time*.35+i*.071)%3.8),Math.cos(i*2.399)*1.2);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();snowfall.setMatrixAt(i,dummy.matrix);}snowfall.instanceMatrix.needsUpdate=true;
+    }
+    if(mode==="jellyfish")jellies.forEach(({g,bell},i)=>{g.position.y=.9+(i%2)*.7+Math.sin(time*.7+i)*.25;g.rotation.z=Math.sin(time*.4+i)*.08;bell.scale.set(1+Math.sin(time*1.5+i)*.08,1+Math.cos(time*1.5+i)*.18+pulse*.25,1+Math.sin(time*1.5+i)*.08);jellyMat.emissiveIntensity=.6+pulse*1.8;});
+    if(mode==="fireflies"){
+      for(let i=0;i<80;i++){const a=i*2.399+time*.12;const r=gathered?.45+(i%4)*.08:1+(i%11)*.13;dummy.position.set(Math.cos(a)*r, .4+(i%17)*.12+Math.sin(time+i)*.13,Math.sin(a)*r);dummy.scale.setScalar(.6+(Math.sin(time*1.4+i)+1)*.5);dummy.updateMatrix();fireflies.setMatrixAt(i,dummy.matrix);}fireflies.instanceMatrix.needsUpdate=true;
+    }
     renderer.render(scene,camera);
     if(moving)frame=requestAnimationFrame(draw);
   };
@@ -83,7 +118,7 @@ export function createSerenityScene(host: HTMLDivElement) {
   const rippleAt=(x:number,z:number)=>{const point=new T.Vector2(x,z).clampLength(0,2.2);target.set(point.x,-.02,point.y);ripple.position.set(point.x,.16,point.y);rippleAge=motion.matches||paused?1:0;attraction=8;wake();};
   let downX=0,downY=0;
   const down=(e:PointerEvent)=>{downX=e.clientX;downY=e.clientY;};
-  const up=(e:PointerEvent)=>{if(mode!=="pond"||Math.hypot(e.clientX-downX,e.clientY-downY)>7)return;const rect=host.getBoundingClientRect();const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-.12),hit)&&Math.hypot(hit.x,hit.z)<2.85)rippleAt(hit.x,hit.z);};
+  const up=(e:PointerEvent)=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>7)return;if(mode!=="pond"){breeze=1;pulse=1;gathered=!gathered;wake();return;}const rect=host.getBoundingClientRect();const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-.12),hit)&&Math.hypot(hit.x,hit.z)<2.85)rippleAt(hit.x,hit.z);};
   renderer.domElement.addEventListener("pointerdown",down);renderer.domElement.addEventListener("pointerup",up);
   const fit=()=>{if(!host.clientWidth||!host.clientHeight)return;renderer.setSize(host.clientWidth,host.clientHeight,false);camera.aspect=host.clientWidth/host.clientHeight;const compact=camera.aspect<1;camera.position.set(0,mode==="pond"?(compact?10:7.5):3.7,compact?12:8);camera.lookAt(0,mode==="pond"?0:.8,0);camera.updateProjectionMatrix();wake();};
   const resize=new ResizeObserver(fit);resize.observe(host);
@@ -93,11 +128,12 @@ export function createSerenityScene(host: HTMLDivElement) {
   document.addEventListener("visibilitychange",visibility);window.addEventListener("scroll",onScroll,{passive:true});motion.addEventListener("change",wake);
   fit();wake();
   return {
-    mode(value:Sanctuary){mode=value;pond.visible=value==="pond";tree.visible=value==="bonsai";fit();},
+    mode(value:Sanctuary){mode=value;pond.visible=value==="pond";tree.visible=value==="bonsai";jellyWorld.visible=value==="jellyfish";grove.visible=value==="fireflies";sun.intensity=value==="jellyfish"||value==="fireflies"?.5:3;fit();},
     ripple(){rippleAt(0,0);},
     rotate(){rotation+=Math.PI/4;wake();},
     pause(value:boolean){paused=value;wake();},
-    season(value:Season){const colors={Spring:"#d8adc0",Summer:"#6f965e",Autumn:"#ca8950",Winter:"#e2e8df"};foliageMat.color.set(colors[value]);foliage.forEach(leaf=>leaf.scale.set(1.2,value==="Winter"?.25:.6,1));soil.material=value==="Winter"?foliageMat:moss;sun.color.set(value==="Winter"?0xd7e4ff:0xffe3b6);wake();},
+    animate(){breeze=1;pulse=1;gathered=!gathered;wake();},
+    season(value:Season){currentSeason=value;seasonStart=time;const colors={Spring:"#e6adc5",Summer:"#6f965e",Autumn:"#d09043",Winter:"#e2e8df"};foliageMat.color.set(colors[value]);soil.material=value==="Winter"?snowMat:moss;sun.color.set(value==="Winter"?0xd7e4ff:0xffe3b6);wake();},
     dispose(){disposed=true;cancelAnimationFrame(frame);clearTimeout(scrollTimer);resize.disconnect();observer.disconnect();document.removeEventListener("visibilitychange",visibility);window.removeEventListener("scroll",onScroll);motion.removeEventListener("change",wake);renderer.domElement.removeEventListener("pointerdown",down);renderer.domElement.removeEventListener("pointerup",up);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();},
   };
 }
