@@ -248,3 +248,10 @@ html[data-calm="true"] .ambient-ember { animation-duration: 60s; }
 
 .serenity-card[data-scene="jellyfish"] { background: radial-gradient(ellipse at 50% 40%, #253758, #101c32 60%, #0b1423); }
 .serenity-card[data-scene="fireflies"] { background: radial-gradient(ellipse at 50% 40%, #253b31, #101e19 60%, #0b1513); }
+
+.serenity-card[data-scene="ocean"] { background: radial-gradient(ellipse at 50% 25%, #354b69, #14243d 60%, #0b1625); }
+.serenity-card[data-scene="rain"] { background: radial-gradient(ellipse at 50% 25%, #65786e, #344941 60%, #172d28); }
+.serenity-card[data-scene="lanterns"] { background: radial-gradient(ellipse at 50% 40%, #514232, #252735 60%, #141e29); }
+.serenity-card[data-scene="zen"] { background: radial-gradient(ellipse at 50% 40%, #5d5e4c, #333e32 60%, #19281f); }
+.sanctuary-view::before { content:""; position:absolute; inset:8% 10%; pointer-events:none; border:1px solid #dfedcc0a; border-radius:50%; background:radial-gradient(ellipse at center, #d9e8c208, transparent 70%); }
+.sanctuary-choice { border-radius: 12px; min-height: 56px; background: linear-gradient(135deg,#c5d8bd0a,transparent); }

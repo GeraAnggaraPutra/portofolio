@@ -1,7 +1,8 @@
 import * as T from "three";
+import { createExtraSanctuaries, type ExtraSanctuary } from "./serenity-extras";
 
 export type Season = "Spring" | "Summer" | "Autumn" | "Winter";
-export type Sanctuary = "pond" | "bonsai" | "jellyfish" | "fireflies";
+export type Sanctuary = "pond" | "bonsai" | "jellyfish" | "fireflies" | ExtraSanctuary;
 export function createSerenityScene(host: HTMLDivElement) {
   const renderer = new T.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -72,6 +73,8 @@ export function createSerenityScene(host: HTMLDivElement) {
   const fireflies=new T.InstancedMesh(glowGeometry,glowMat,80);grove.add(fireflies);
   const moon=mesh(grove,new T.SphereGeometry(.35,20,12),glowMat,0,3,-2);
   moon.scale.setScalar(.8);
+  const extras=createExtraSanctuaries(scene);
+  const isExtra=(value:Sanctuary):value is ExtraSanctuary=>value in extras.groups;
   let currentSeason:Season="Summer", seasonStart=0, breeze=0, pulse=0, gathered=false;
   let mode:Sanctuary="pond", paused=false, visible=true, disposed=false, scrolling=false;
   let frame=0, last=0, time=0, rippleAge=10, attraction=0, rotation=0, currentRotation=0;
@@ -111,6 +114,7 @@ export function createSerenityScene(host: HTMLDivElement) {
     if(mode==="fireflies"){
       for(let i=0;i<80;i++){const a=i*2.399+time*.12;const r=gathered?.45+(i%4)*.08:1+(i%11)*.13;dummy.position.set(Math.cos(a)*r, .4+(i%17)*.12+Math.sin(time+i)*.13,Math.sin(a)*r);dummy.scale.setScalar(.6+(Math.sin(time*1.4+i)+1)*.5);dummy.updateMatrix();fireflies.setMatrixAt(i,dummy.matrix);}fireflies.instanceMatrix.needsUpdate=true;
     }
+    if(isExtra(mode))extras.update(mode,time,dt,moving);
     renderer.render(scene,camera);
     if(moving)frame=requestAnimationFrame(draw);
   };
@@ -118,7 +122,7 @@ export function createSerenityScene(host: HTMLDivElement) {
   const rippleAt=(x:number,z:number)=>{const point=new T.Vector2(x,z).clampLength(0,2.2);target.set(point.x,-.02,point.y);ripple.position.set(point.x,.16,point.y);rippleAge=motion.matches||paused?1:0;attraction=8;wake();};
   let downX=0,downY=0;
   const down=(e:PointerEvent)=>{downX=e.clientX;downY=e.clientY;};
-  const up=(e:PointerEvent)=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>7)return;if(mode!=="pond"){breeze=1;pulse=1;gathered=!gathered;wake();return;}const rect=host.getBoundingClientRect();const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-.12),hit)&&Math.hypot(hit.x,hit.z)<2.85)rippleAt(hit.x,hit.z);};
+  const up=(e:PointerEvent)=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>7)return;if(mode!=="pond"){breeze=1;pulse=1;gathered=!gathered;if(isExtra(mode))extras.action();wake();return;}const rect=host.getBoundingClientRect();const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-.12),hit)&&Math.hypot(hit.x,hit.z)<2.85)rippleAt(hit.x,hit.z);};
   renderer.domElement.addEventListener("pointerdown",down);renderer.domElement.addEventListener("pointerup",up);
   const fit=()=>{if(!host.clientWidth||!host.clientHeight)return;renderer.setSize(host.clientWidth,host.clientHeight,false);camera.aspect=host.clientWidth/host.clientHeight;const compact=camera.aspect<1;camera.position.set(0,mode==="pond"?(compact?10:7.5):3.7,compact?12:8);camera.lookAt(0,mode==="pond"?0:.8,0);camera.updateProjectionMatrix();wake();};
   const resize=new ResizeObserver(fit);resize.observe(host);
@@ -128,12 +132,12 @@ export function createSerenityScene(host: HTMLDivElement) {
   document.addEventListener("visibilitychange",visibility);window.addEventListener("scroll",onScroll,{passive:true});motion.addEventListener("change",wake);
   fit();wake();
   return {
-    mode(value:Sanctuary){mode=value;pond.visible=value==="pond";tree.visible=value==="bonsai";jellyWorld.visible=value==="jellyfish";grove.visible=value==="fireflies";sun.intensity=value==="jellyfish"||value==="fireflies"?.5:3;fit();},
+    mode(value:Sanctuary){mode=value;Object.entries(extras.groups).forEach(([key,group])=>{group.visible=key===value;});pond.visible=value==="pond";tree.visible=value==="bonsai";jellyWorld.visible=value==="jellyfish";grove.visible=value==="fireflies";sun.intensity=value==="jellyfish"||value==="fireflies"?.5:3;fit();},
     ripple(){rippleAt(0,0);},
     rotate(){rotation+=Math.PI/4;wake();},
     pause(value:boolean){paused=value;wake();},
-    animate(){breeze=1;pulse=1;gathered=!gathered;wake();},
+    animate(){breeze=1;pulse=1;gathered=!gathered;if(isExtra(mode))extras.action();wake();},
     season(value:Season){currentSeason=value;seasonStart=time;const colors={Spring:"#e6adc5",Summer:"#6f965e",Autumn:"#d09043",Winter:"#e2e8df"};foliageMat.color.set(colors[value]);soil.material=value==="Winter"?snowMat:moss;sun.color.set(value==="Winter"?0xd7e4ff:0xffe3b6);wake();},
-    dispose(){disposed=true;cancelAnimationFrame(frame);clearTimeout(scrollTimer);resize.disconnect();observer.disconnect();document.removeEventListener("visibilitychange",visibility);window.removeEventListener("scroll",onScroll);motion.removeEventListener("change",wake);renderer.domElement.removeEventListener("pointerdown",down);renderer.domElement.removeEventListener("pointerup",up);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();},
+    dispose(){extras.dispose();disposed=true;cancelAnimationFrame(frame);clearTimeout(scrollTimer);resize.disconnect();observer.disconnect();document.removeEventListener("visibilitychange",visibility);window.removeEventListener("scroll",onScroll);motion.removeEventListener("change",wake);renderer.domElement.removeEventListener("pointerdown",down);renderer.domElement.removeEventListener("pointerup",up);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();},
   };
 }
