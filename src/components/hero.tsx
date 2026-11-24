@@ -110,6 +110,20 @@ export function Hero() {
           </div>
         </div>
       </div>
+      <div className="container-x border-y border-white/10 py-4" role="img" aria-label="Thoughtful architecture, reliable workflows, observable systems, built to last">
+        <div className="hero-marquee overflow-hidden">
+          <div className="hero-marquee-track mono flex w-max items-center gap-10 text-[0.65rem] font-medium uppercase tracking-[0.22em] text-amber-200/75 sm:text-xs" aria-hidden="true">
+            {Array.from({ length: 2 }, (_, copy) => (
+              <div key={copy} className="flex shrink-0 items-center gap-10">
+                <span>Thoughtful architecture</span><span className="text-amber-400">✦</span>
+                <span>Reliable workflows</span><span className="text-amber-400">✦</span>
+                <span>Observable systems</span><span className="text-amber-400">✦</span>
+                <span>Built to last</span><span className="text-amber-400">✦</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

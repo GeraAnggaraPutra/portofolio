@@ -1,20 +1,15 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { motion, useScroll, useSpring } from "framer-motion";
 import { navItems } from "@/data/portfolio";
 import { cn } from "@/lib/cn";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const [atTop, setAtTop] = useState(true);
-
-  useEffect(() => {
-    const update = () => setAtTop(window.scrollY < 12);
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, []);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
 
   return (
     <header className="fixed inset-x-0 top-5 z-50 px-4 sm:px-8 xl:px-14">
@@ -58,9 +53,11 @@ export function Navbar() {
           </button>
         </nav>
 
-        <div className={cn("nav-comet-track", !atTop && "nav-comet-hidden")} aria-hidden="true">
-          <span className="nav-comet" />
-        </div>
+        {/* Scroll progress bar — sits flush under the nav */}
+        <motion.div
+          style={{ scaleX, transformOrigin: "left" }}
+          className="h-[2px] rounded-full bg-amber-400/60"
+        />
 
         {/* Mobile drawer */}
         <div
