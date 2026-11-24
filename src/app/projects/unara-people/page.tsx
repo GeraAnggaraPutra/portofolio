@@ -7,6 +7,7 @@ import {
   Calculator,
   Database,
   Fingerprint,
+  FileText,
   ScanLine,
   ShieldCheck,
 } from "lucide-react";
@@ -16,7 +17,7 @@ import { projects } from "@/data/portfolio";
 export const metadata: Metadata = {
   title: "UNARA People — Backend Case Study",
   description:
-    "A close look at the Go backend behind UNARA People: API security, online and offline attendance, patrol, payroll, leave balance, and observability.",
+    "A Go HRIS case study covering four application services, performance processing, payslip reporting, attendance, payroll, and observability.",
 };
 
 const project = projects[0];
@@ -25,7 +26,9 @@ const caseSections = [
   ["Architecture", "architecture-title"],
   ["Attendance", "attendance-title"],
   ["Patrol", "patrol-title"],
+  ["Performance", "performance-title"],
   ["Payroll", "payroll-title"],
+  ["Report", "report-title"],
   ["Decisions", "decisions-title"],
   ["Reliability", "integrity-title"],
 ] as const;
@@ -51,17 +54,25 @@ const services = [
     number: "03",
     title: "Transaction Service",
     icon: ScanLine,
-    purpose: "Events and outcomes",
+    purpose: "Transactional workflows",
     detail:
-      "Runs attendance, requests, approvals, patrol inspections, and payroll. Business decisions use the current rules supplied by Master Service.",
+      "Runs attendance, leave, WFH and overtime requests, approvals, patrol, payroll, and performance calculation using rules from Master Service.",
   },
   {
     number: "04",
+    title: "Report Service",
+    icon: FileText,
+    purpose: "Read models and documents",
+    detail:
+      "Stores performance results and published payslip snapshots in its own database. Serves dashboards, reports, and payslip documents.",
+  },
+  {
+    number: "05",
     title: "Observability",
     icon: Activity,
     purpose: "Operational evidence",
     detail:
-      "Prometheus metrics, Grafana dashboards, Loki logs, Alloy collection, and alerts make failures traceable across the three application services.",
+      "Prometheus metrics, Grafana dashboards, Loki logs, Alloy collection, and alerts support investigation across the services.",
   },
 ];
 
@@ -107,13 +118,49 @@ const attendanceSteps = [
   },
 ];
 
+const performanceSteps = [
+  {
+    number: "01",
+    title: "Keep periods current",
+    detail: "A background sync updates performance periods and queues work for the employees and dates that need calculation.",
+  },
+  {
+    number: "02",
+    title: "Process durable work",
+    detail: "Employee changes enter persistent event and recalculation tables. The worker claims jobs in batches, combines attendance and related records with master context, then records results or failures.",
+  },
+  {
+    number: "03",
+    title: "Publish the result",
+    detail: "A database outbox sends calculated results in batches through an internal API. Report Service stores them for summaries and dashboards; worker and delivery metrics expose progress and failures.",
+  },
+];
+
+const reportCapabilities = [
+  {
+    number: "01",
+    title: "Performance read model",
+    detail: "Transaction Service calculates and sends performance results. Report Service stores the batch in its own database, then serves summaries, dashboards, performance and attendance detail, and dashboard export without recalculating performance.",
+  },
+  {
+    number: "02",
+    title: "Payslip documents",
+    detail: "A Transaction Service outbox publishes payslip snapshots and components through an internal API. Report Service saves them, then its document worker claims available work, builds a PDF, uploads it through the storage integration, updates its status and path, and triggers a notification.",
+  },
+  {
+    number: "03",
+    title: "Reports across boundaries",
+    detail: "Overtime reporting combines employee and rule context from Master Service with overtime source data from Transaction Service through service APIs, without reading either service's database directly.",
+  },
+];
+
 const payrollSteps = [
   ["01", "Select", "Choose the payroll period and employees; reject locked or already-running periods."],
   ["02", "Resolve", "Read effective-dated salary and PAYFIELD values against the pay date, plus attendance metrics and approved overrides."],
   ["03", "Evaluate", "Sort component dependencies, evaluate formulas, and apply configured rounding."],
   ["04", "Tax", "Calculate TER-based PPh21 with GROSS, NET gross-up, or TAX_BORNE treatment."],
   ["05", "Persist", "Save component-level results and the formula context as an auditable snapshot."],
-  ["06", "Deliver", "Stream process progress through SSE, inspect per-employee failures, then generate reports, payslips, bank files, and Coretax exports."],
+  ["06", "Deliver", "Stream progress through SSE and inspect per-employee failures. Transaction Service retains payroll results for reports, bank files, and Coretax exports; a separate outbox publishes payslip data to Report Service."],
 ] as const;
 
 const designDecisions = [
@@ -185,18 +232,18 @@ export default function UnaraPeopleCaseStudy() {
         </nav>
 
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="architecture-title">
-          <SectionHeading id="architecture-title" eyebrow="System architecture" title="Four repositories, clear ownership." description="Rules and reference data stay in Master Service. Transaction Service owns events and results. The gateway protects access, while observability shows what happened when something goes wrong." />
-          <div className="mt-9 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {services.map(({ number, title, icon: Icon, purpose, detail }) => (
-              <article key={title} className="rounded-2xl border border-white/10 bg-[#111612]/80 p-6 transition-colors hover:border-amber-400/30">
-                <div className="flex items-center justify-between text-amber-300"><Icon size={22} aria-hidden="true" /><span className="mono text-xs text-zinc-600">{number} / 04</span></div>
+          <SectionHeading id="architecture-title" eyebrow="System architecture" title="Four application services, one observability stack." description="The gateway controls public access. Master Service owns rules and reference data; Transaction Service owns business events and results. Report Service owns reporting read models and payslip documents, while observability monitors the service boundaries." />
+          <div className="mt-9 grid gap-3 md:grid-cols-2 lg:grid-cols-6">
+            {services.map(({ number, title, icon: Icon, purpose, detail }, index) => (
+              <article key={title} className={`rounded-2xl border border-white/10 bg-[#111612]/80 p-6 transition-colors hover:border-amber-400/30 ${index < 3 ? "lg:col-span-2" : "lg:col-span-3"} ${index === 4 ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                <div className="flex items-center justify-between text-amber-300"><Icon size={22} aria-hidden="true" /><span className="mono text-xs text-zinc-600">{number} / 05</span></div>
                 <h3 className="mt-7 text-xl font-semibold text-white">{title}</h3>
                 <p className="mono mt-1 text-[0.62rem] uppercase tracking-[0.16em] text-amber-400/80">{purpose}</p>
                 <p className="mt-4 text-sm leading-6 text-zinc-400">{detail}</p>
               </article>
             ))}
           </div>
-          <p className="mt-5 text-xs leading-6 text-zinc-500">Client request → Gateway → domain service → PostgreSQL / Redis · metrics and logs → observability stack</p>
+          <p className="mt-5 text-xs leading-6 text-zinc-500">Client → API Gateway → Master / Transaction / Report · Transaction → internal API → Report&apos;s own database · service metrics and logs → observability</p>
         </section>
 
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="attendance-title">
@@ -229,6 +276,19 @@ export default function UnaraPeopleCaseStudy() {
           </div>
         </section>
 
+        <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="performance-title">
+          <SectionHeading id="performance-title" eyebrow="Transaction Service" title="Performance moves from events to evidence." description="Attendance, corrections, overtime, and employee changes can affect a performance period. Transaction Service owns the background calculation; it is separate from payroll processing." />
+          <div className="mt-9 grid gap-3 lg:grid-cols-3">
+            {performanceSteps.map(({ number, title, detail }) => (
+              <article key={number} className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
+                <span className="mono text-xs text-cyan-400">{number} / 03</span>
+                <h3 className="mt-5 text-lg font-semibold text-white">{title}</h3>
+                <p className="mt-3 text-sm leading-7 text-zinc-400">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="payroll-title">
           <div className="flex items-start gap-4"><Calculator className="mt-1 shrink-0 text-amber-400" size={25} aria-hidden="true" /><SectionHeading id="payroll-title" eyebrow="Accuracy at scale" title="Payroll is a process, not a sum." description="The calculation path combines dated HR data, attendance, formulas, tax rules, and an auditable result. I worked on this flow and fixed cases that affected result accuracy, including attendance status interpretation and duplicate overtime payment." /></div>
           <ol className="mt-9 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -241,6 +301,20 @@ export default function UnaraPeopleCaseStudy() {
             ))}
           </ol>
           <p className="mt-5 text-xs leading-6 text-zinc-500">NET mode iterates the tax allowance because gross-up can move taxable income into a different TER bracket. A failed employee can be inspected and reprocessed before the period is closed.</p>
+        </section>
+
+        <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="report-title">
+          <SectionHeading id="report-title" eyebrow="Report Service" title="Calculated once. Presented where it matters." description="This service owns its reporting data and document workflow. It receives published results through internal contracts and also assembles overtime reports using service APIs." />
+          <div className="mt-9 grid gap-3 lg:grid-cols-3">
+            {reportCapabilities.map(({ number, title, detail }) => (
+              <article key={number} className="rounded-2xl border border-white/10 bg-[#111612]/80 p-6">
+                <span className="mono text-xs text-amber-400">{number} / 03</span>
+                <h3 className="mt-5 text-lg font-semibold text-white">{title}</h3>
+                <p className="mt-3 text-sm leading-7 text-zinc-400">{detail}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-5 text-sm leading-7 text-zinc-400">If a ready payslip file is missing, the file endpoint schedules regeneration and responds that the document is being recreated.</p>
         </section>
 
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="decisions-title">
