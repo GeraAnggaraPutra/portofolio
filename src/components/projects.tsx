@@ -34,21 +34,22 @@ export function Projects() {
               <span className="mono text-[0.62rem] uppercase tracking-[0.18em] text-zinc-500">01 / HRIS platform</span>
             </div>
             <h3 className="mt-7 max-w-lg text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-5xl">UNARA <span className="text-amber-300">People.</span></h3>
-            <p className="mt-5 max-w-xl text-base leading-8 text-zinc-300">A multi-company HR platform spanning four Go repositories. My work connects secure API access, online and offline attendance, payroll accuracy, patrol operations, and production observability.</p>
+            <p className="mt-5 max-w-xl text-base leading-8 text-zinc-300">A multi-company HR platform built across four Go application services and an observability stack. My work connects API security, approvals, online and offline attendance, patrol, payroll accuracy, reporting, and production visibility.</p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link href="/projects/unara-people" className="group inline-flex min-h-11 items-center gap-2 rounded-full bg-amber-300 px-5 text-sm font-semibold text-[#17120b] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">Read the case study <ArrowUpRight size={16} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" /></Link>
               <ProjectLinks links={featured.links} projectTitle={featured.title} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2.5" aria-label="Four backend areas covered in the UNARA People case study">
+          <div className="grid grid-cols-2 gap-2.5" aria-label="Four application services and one observability stack in the UNARA People case study">
             {[
               ["01", "API Gateway", "Access, routing, resilience"],
               ["02", "Master Service", "Rules and reference data"],
-              ["03", "Transaction Service", "Operational workflows"],
-              ["04", "Observability", "Metrics, logs, alerts"],
-            ].map(([number, title, detail]) => (
-              <div key={number} className="min-h-28 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
-                <span className="mono text-[0.62rem] text-amber-300">{number} / 04</span>
+              ["03", "Transaction Service", "Requests, payroll, performance"],
+              ["04", "Report Service", "Read models, payslip documents"],
+              ["05", "Observability", "Metrics, logs, alerts"],
+            ].map(([number, title, detail], index) => (
+              <div key={number} className={`min-h-28 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5 ${index === 4 ? "col-span-2" : ""}`}>
+                <span className="mono text-[0.62rem] text-amber-300">{number} / 05</span>
                 <p className="mt-3 text-sm font-semibold text-white">{title}</p>
                 <p className="mt-1 text-xs leading-5 text-zinc-500">{detail}</p>
               </div>

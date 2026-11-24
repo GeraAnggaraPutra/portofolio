@@ -107,19 +107,20 @@ export const projects: Project[] = [
       { platform: "appstore", href: "https://apps.apple.com/in/app/unara-people/id6812378130" },
     ],
     summary:
-      "Multi-company HRIS across four Go services. I built patrol end to end and worked across API security, online and offline attendance, leave, payroll, and observability.",
+      "Multi-company HRIS across four Go services and observability. I built patrol end to end alongside approval, attendance, payroll, performance, and reporting workflows.",
     problem:
       "Payroll and attendance workflows can fail halfway or silently duplicate when consistency is not designed in from the start.",
     impact:
-      "Connected domain ownership, online and offline attendance, patrol sync, transactional payroll workflows, and traceable operations across four services.",
+      "Connected domain ownership, online and offline attendance, approvals, patrol sync, payroll, reporting read models, and traceable operations across four services.",
     stack: ["Go", "PostgreSQL", "Redis", "SSE", "S3", "FCM", "Grafana", "Loki", "Prometheus"],
     accent: "cyan",
     bullets: [
-      "Worked across the API Gateway, Master Service, Transaction Service, and observability stack, with clear ownership of policy data and operational events.",
+      "Built and integrated the API Gateway, Master Service, Transaction Service, Report Service, and observability stack, with clear ownership of policy, transactions, and reporting data.",
       "Designed and implemented patrol end to end: areas, assets, QR validation, assignments, inspections, offline synchronization, and scheduled follow-up.",
       "Integrated online and offline attendance with shift and location rules, signed offline events, deduplication, audited corrections, and payroll inputs.",
       "Contributed to leave balance transitions, approval flows, bulk import/export, and payroll accuracy across service boundaries.",
       "Worked on formula-based payroll with effective-dated inputs, TER-based PPh21 modes, auditable result snapshots, SSE progress, and downstream exports.",
+      "Built Report Service read models for calculated performance results and asynchronous payslip document generation from published payroll snapshots.",
       "Integrated authentication, menu-based permissions, signed upstream requests, rate limits, circuit breakers, structured logs, metrics, dashboards, and alerts.",
     ],
   },
