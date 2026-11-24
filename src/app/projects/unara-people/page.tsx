@@ -5,9 +5,11 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Calculator,
+  ClipboardCheck,
   Database,
   Fingerprint,
   FileText,
+  GitBranch,
   ScanLine,
   ShieldCheck,
 } from "lucide-react";
@@ -17,13 +19,14 @@ import { projects } from "@/data/portfolio";
 export const metadata: Metadata = {
   title: "UNARA People — Backend Case Study",
   description:
-    "A Go HRIS case study covering four application services, performance processing, payslip reporting, attendance, payroll, and observability.",
+    "How I built UNARA People's Go HRIS backend: multi-company approvals, offline attendance, patrol, payroll, performance workers, reporting, and observability.",
 };
 
 const project = projects[0];
 
 const caseSections = [
   ["Architecture", "architecture-title"],
+  ["Approvals", "approvals-title"],
   ["Attendance", "attendance-title"],
   ["Patrol", "patrol-title"],
   ["Performance", "performance-title"],
@@ -48,7 +51,7 @@ const services = [
     icon: Database,
     purpose: "Rules and reference data",
     detail:
-      "The source of truth for companies, employees, organization, shifts, approval flows, payroll definitions, patrol setup, and leave balances.",
+      "The source of truth for companies, employees and dated career transitions, organization, shifts, approval flows, payroll definitions, patrol setup, and leave balances.",
   },
   {
     number: "03",
@@ -56,7 +59,7 @@ const services = [
     icon: ScanLine,
     purpose: "Transactional workflows",
     detail:
-      "Runs attendance, leave, WFH and overtime requests, approvals, patrol, payroll, and performance calculation using rules from Master Service.",
+      "Runs attendance, leave, WFH, overtime, work permit and correction requests, approvals, patrol, payroll, and performance calculation using Master Service rules.",
   },
   {
     number: "04",
@@ -73,6 +76,29 @@ const services = [
     purpose: "Operational evidence",
     detail:
       "Prometheus metrics, Grafana dashboards, Loki logs, Alloy collection, and alerts support investigation across the services.",
+  },
+];
+
+const approvalSteps = [
+  {
+    number: "01",
+    title: "Configure the route",
+    detail: "Master Service defines approval levels, eligible approvers, and scope. Transaction Service resolves the applicable flow when a request is submitted.",
+  },
+  {
+    number: "02",
+    title: "Submit the request",
+    detail: "Employees can draft and submit leave, overtime, WFH, work permit, or attendance correction requests. Transaction Service stores the request and its approval steps.",
+  },
+  {
+    number: "03",
+    title: "Act at the right level",
+    detail: "The approver is checked against the request's assigned step. Approve, reject, and revision actions move the request through its lifecycle; supported approval lists also offer batch actions.",
+  },
+  {
+    number: "04",
+    title: "Apply the outcome",
+    detail: "For leave, submission holds balance, final approval commits it and updates eligible attendance days, while rejection or cancellation releases it. The next approver or employee is notified as appropriate.",
   },
 ];
 
@@ -121,18 +147,18 @@ const attendanceSteps = [
 const performanceSteps = [
   {
     number: "01",
-    title: "Keep periods current",
-    detail: "A background sync updates performance periods and queues work for the employees and dates that need calculation.",
+    title: "Capture changes",
+    detail: "Master Service publishes employee changes through an outbox into Transaction Service's persistent inbox. Daily background sync keeps periods current; attendance and assignment changes also schedule recalculation.",
   },
   {
     number: "02",
-    title: "Process durable work",
-    detail: "Employee changes enter persistent event and recalculation tables. The worker claims jobs in batches, combines attendance and related records with master context, then records results or failures.",
+    title: "Coalesce and calculate",
+    detail: "One database job per employee and period merges repeated changes by date range and requested version. Workers claim batches with SKIP LOCKED, calculate attendance, discipline, absence, corrections, overtime, and early arrivals, then record results or failures.",
   },
   {
     number: "03",
-    title: "Publish the result",
-    detail: "A database outbox sends calculated results in batches through an internal API. Report Service stores them for summaries and dashboards; worker and delivery metrics expose progress and failures.",
+    title: "Publish a versioned result",
+    detail: "A single SQL statement saves each result and its delivery outbox entry. The dispatcher sends batches to Report Service through an internal API; Report accepts newer versions for dashboards and summaries. Queue and delivery metrics reveal backlog and failures.",
   },
 ];
 
@@ -140,7 +166,7 @@ const reportCapabilities = [
   {
     number: "01",
     title: "Performance read model",
-    detail: "Transaction Service calculates and sends performance results. Report Service stores the batch in its own database, then serves summaries, dashboards, performance and attendance detail, and dashboard export without recalculating performance.",
+    detail: "Transaction Service calculates and sends performance results. Report Service stores newer result versions in its own database, then serves summaries, dashboards, performance and attendance detail, and dashboard export without recalculating performance.",
   },
   {
     number: "02",
@@ -182,6 +208,12 @@ const designDecisions = [
     decision: "Order formula dependencies, save calculated components and context as a snapshot, expose progress, and allow failed employees to be retried.",
     consequence: "Reports and exports use the stored payroll result instead of silently recalculating it later.",
   },
+  {
+    number: "04", category: "Performance processing", title: "Why PostgreSQL jobs instead of RabbitMQ?",
+    constraint: "Repeated changes for one employee and period must merge into the latest requested calculation, while results and delivery state remain traceable.",
+    decision: "Keep versioned jobs in PostgreSQL, claim batches with SKIP LOCKED, and save each calculated result with its outbox entry in one SQL statement.",
+    consequence: "A broker could distribute messages, but would not replace the calculation state or the result-to-outbox consistency boundary. Queue age and delivery failures remain visible in metrics.",
+  },
 ];
 
 function SectionHeading({ id, eyebrow, title, description }: { id: string; eyebrow: string; title: string; description: string }) {
@@ -216,8 +248,13 @@ export default function UnaraPeopleCaseStudy() {
             An HR platform where policy, daily operations, and payroll outcomes must stay consistent across company boundaries.
           </p>
           <p className="mt-5 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
-            I worked across its API Gateway, Master Service, Transaction Service, and observability stack. My end-to-end ownership included the patrol feature; I also contributed to online and offline attendance, leave balance, payroll accuracy, import/export, access control, and production visibility.
+            I designed, built, and integrated the API Gateway, Master Service, Transaction Service, Report Service, and observability stack. My work spans the approval lifecycle, online and offline attendance, patrol from setup to field evidence, payroll accuracy, data import/export, access control, reporting, and production visibility.
           </p>
+          <div className="mt-8 grid max-w-4xl gap-3 rounded-2xl border border-amber-300/20 bg-[radial-gradient(circle_at_0%_0%,rgba(251,191,36,0.12),transparent_55%)] p-5 sm:grid-cols-3 sm:p-6">
+            <div><span className="mono text-[0.62rem] uppercase tracking-[0.18em] text-amber-300">My scope</span><p className="mt-2 text-sm font-medium text-zinc-200">Four application services</p></div>
+            <div className="border-t border-white/10 pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0"><span className="mono text-[0.62rem] uppercase tracking-[0.18em] text-amber-300">Operations</span><p className="mt-2 text-sm font-medium text-zinc-200">One observability stack</p></div>
+            <div className="border-t border-white/10 pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0"><span className="mono text-[0.62rem] uppercase tracking-[0.18em] text-amber-300">End-to-end feature</span><p className="mt-2 text-sm font-medium text-zinc-200">Patrol across services</p></div>
+          </div>
           <div className="mt-8 flex flex-wrap gap-2">
             {project.stack.map((item) => <span key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-zinc-300">{item}</span>)}
           </div>
@@ -243,7 +280,44 @@ export default function UnaraPeopleCaseStudy() {
               </article>
             ))}
           </div>
-          <p className="mt-5 text-xs leading-6 text-zinc-500">Client → API Gateway → Master / Transaction / Report · Transaction → internal API → Report&apos;s own database · service metrics and logs → observability</p>
+          <p className="mt-5 text-xs leading-6 text-zinc-500">Client → API Gateway → domain service · Master outbox → Transaction inbox → recalculation job → result + outbox → Report read model · metrics and logs → observability</p>
+        </section>
+
+        <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="approvals-title">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)] lg:items-end">
+            <div className="flex items-start gap-4">
+              <ClipboardCheck className="mt-1 shrink-0 text-amber-400" size={25} aria-hidden="true" />
+              <SectionHeading id="approvals-title" eyebrow="Requests and approvals" title="A request is more than a status change." description="I built the workflows that connect employee requests, configured approvers, company boundaries, attendance, and leave balances. Master Service defines who may decide; Transaction Service records each request and action." />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+              <p className="mono text-[0.65rem] uppercase tracking-[0.18em] text-zinc-400">Request types</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Leave", "Overtime", "WFH", "Work permit", "Attendance correction"].map((item) => <span key={item} className="rounded-full border border-amber-300/15 bg-amber-300/[0.07] px-3 py-1.5 text-xs font-medium text-amber-100/90">{item}</span>)}
+              </div>
+            </div>
+          </div>
+          <div className="mt-9 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {approvalSteps.map(({ number, title, detail }) => (
+              <article key={number} className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#14130f]/90 p-6 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-amber-400/35 motion-reduce:transform-none">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-amber-300/70 via-amber-300/15 to-transparent" aria-hidden="true" />
+                <span className="mono text-xs text-amber-400">{number} / 04</span>
+                <h3 className="mt-5 text-lg font-semibold text-white">{title}</h3>
+                <p className="mt-3 text-sm leading-7 text-zinc-400">{detail}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <article className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.045] p-5 sm:p-6">
+              <GitBranch size={20} className="text-cyan-300" aria-hidden="true" />
+              <h3 className="mt-4 text-base font-semibold text-white">The request owns its company context</h3>
+              <p className="mt-2 text-sm leading-7 text-zinc-400">An approver can belong to another company. Identity is checked against the assigned approval step, while leave and attendance changes use the request&apos;s company.</p>
+            </article>
+            <article className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.045] p-5 sm:p-6">
+              <Database size={20} className="text-emerald-300" aria-hidden="true" />
+              <h3 className="mt-4 text-base font-semibold text-white">Leave balance follows the decision</h3>
+              <p className="mt-2 text-sm leading-7 text-zinc-400">Master Service keeps the balance ledger: submitted days are held, final approval commits them, rejection or cancellation releases them, and revisions adjust the allocation.</p>
+            </article>
+          </div>
         </section>
 
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="attendance-title">
@@ -277,7 +351,7 @@ export default function UnaraPeopleCaseStudy() {
         </section>
 
         <section className="border-t border-white/10 py-16 sm:py-20" aria-labelledby="performance-title">
-          <SectionHeading id="performance-title" eyebrow="Transaction Service" title="Performance moves from events to evidence." description="Attendance, corrections, overtime, and employee changes can affect a performance period. Transaction Service owns the background calculation; it is separate from payroll processing." />
+          <SectionHeading id="performance-title" eyebrow="Transaction Service" title="Performance moves from events to evidence." description="The worker maintains performance periods and recalculates affected employees in the background. Its database-backed inbox, jobs, and outbox separate calculation from delivery; payroll follows its own processing path." />
           <div className="mt-9 grid gap-3 lg:grid-cols-3">
             {performanceSteps.map(({ number, title, detail }) => (
               <article key={number} className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
@@ -346,8 +420,8 @@ export default function UnaraPeopleCaseStudy() {
             </article>
             <article className="rounded-2xl border border-white/10 bg-[#111612]/70 p-6 sm:p-7">
               <Database className="text-amber-400" size={23} aria-hidden="true" />
-              <h3 className="mt-5 text-xl font-semibold text-white">Leave balance as a ledger</h3>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">Submitting a leave request holds days; approval commits them; rejection or cancellation releases them. Revision adjusts allocations. Row locking and status-aware transitions keep concurrent requests and repeated actions from double-spending the balance.</p>
+              <h3 className="mt-5 text-xl font-semibold text-white">Employee history with effective dates</h3>
+              <p className="mt-3 text-sm leading-7 text-zinc-400">Master Service records career transitions with effective dates and history. Employment endings and reinstatements publish events that can trigger performance recalculation in Transaction Service.</p>
             </article>
             <article className="rounded-2xl border border-white/10 bg-[#111612]/70 p-6 sm:p-7">
               <ArrowUpRight className="text-amber-400" size={23} aria-hidden="true" />
@@ -357,7 +431,7 @@ export default function UnaraPeopleCaseStudy() {
             <article className="rounded-2xl border border-white/10 bg-[#111612]/70 p-6 sm:p-7">
               <Activity className="text-amber-400" size={23} aria-hidden="true" />
               <h3 className="mt-5 text-xl font-semibold text-white">Evidence in production</h3>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">I built a provisioned Grafana, Prometheus, Loki, and Alloy stack with service and host metrics, business panels for clock and payroll outcomes, searchable structured logs, and alerts for availability, errors, latency, and capacity.</p>
+              <p className="mt-3 text-sm leading-7 text-zinc-400">I built a provisioned Grafana, Prometheus, Loki, and Alloy stack with service and host metrics, clock and payroll panels, searchable logs, and alerts for availability, errors, latency, and capacity. Performance panels track ready jobs, oldest queue age, version lag, worker cycles, delivery outcomes, and calculation-to-delivery latency.</p>
             </article>
           </div>
         </section>
