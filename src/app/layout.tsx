@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SitePreloader } from "@/components/site-preloader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <SitePreloader />
         <a href="#main-content" className="skip-link">Skip to content</a>
         {/* Film-grain texture overlay — subtle premium feel */}
         <div
