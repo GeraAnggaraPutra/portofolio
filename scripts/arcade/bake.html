@@ -1,0 +1,79 @@
+<!doctype html> <meta charset="utf-8" /><title>Arcade model sheets</title>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "/node_modules/three/build/three.module.js",
+      "three/addons/": "/node_modules/three/examples/jsm/"
+    }
+  }
+</script>
+<script type="module">
+  import * as T from "three";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+  import * as models from "./models.mjs";
+
+  // Serve the repository root locally, then open this file to rebuild a sheet.
+  const renderer = new T.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+  renderer.setSize(160, 160);
+  renderer.setClearColor(0, 0);
+  const pmrem = new T.PMREMGenerator(renderer);
+  const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  async function bake(name) {
+    const { root, pose } = await models[name]();
+    const scene = new T.Scene();
+    scene.environment = environment;
+    const spaceLight = name === "asteroid";
+    scene.environmentIntensity = spaceLight ? .17 : 0.6;
+    scene.add(root, new T.HemisphereLight(0xffecd4, 0x45505b, spaceLight ? .38 : 1.3));
+    const sun = new T.DirectionalLight(0xffe3bd, 2.4);
+    sun.position.set(-4, 6, -3);
+    scene.add(sun);
+    const rim = new T.DirectionalLight(0xa7ceef, 1.1);
+    rim.position.set(4, 2, 1);
+    scene.add(rim);
+    const span = {
+      boat: 1.65,
+      koi: 1.48,
+      drone: 1.11,
+      ship: 1.59,
+      lantern: 1.12,
+      sapling: 1.02,
+      asteroid: 1.1,
+    }[name];
+    const camera = new T.OrthographicCamera(-span, span, span, -span, 0.01, 30);
+    camera.position.set(0, name === "lantern" ? 3 : 7, name === "lantern" ? 7 : 5);
+    camera.lookAt(0, 0, 0);
+    const directions = ["lantern", "sapling"].includes(name) ? 1 : 24;
+    const poses = pose ? 4 : 1,
+      sheet = document.createElement("canvas");
+    sheet.width = directions * 160;
+    sheet.height = poses * 160;
+    const ctx = sheet.getContext("2d");
+    for (let frame = 0; frame < poses; frame++) {
+      pose?.((frame * Math.PI) / 2);
+      for (let d = 0; d < directions; d++) {
+        root.rotation.y = (-d * Math.PI * 2) / directions;
+        renderer.render(scene, camera);
+        ctx.drawImage(renderer.domElement, d * 160, frame * 160);
+      }
+    }
+    return sheet.toDataURL("image/webp", 0.92);
+  }
+  for (const name of Object.keys(models)) {
+    const button = document.createElement("button");
+    button.textContent = "Export " + name;
+    document.body.appendChild(button);
+    button.onclick = async () => {
+      button.disabled = true;
+      try {
+        const link = document.createElement("a");
+        link.download = name + ".webp";
+        link.href = await bake(name);
+        link.click();
+      } finally {
+        button.disabled = false;
+      }
+    };
+  }
+</script>
+<body></body>

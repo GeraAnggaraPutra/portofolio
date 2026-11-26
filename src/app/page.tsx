@@ -1,5 +1,5 @@
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
-import { SerenityGallery } from "@/components/serenity-gallery";
+import { GameArcade } from "@/components/game-arcade";
 import { About } from "@/components/about";
 import { Contact } from "@/components/contact";
 import { CareerTimeline } from "@/components/career-timeline";
@@ -20,7 +20,7 @@ export default function Home() {
           <Hero />
           <About />
           <Projects />
-          <SerenityGallery />
+          <GameArcade />
           <CareerTimeline />
           <TechStack />
           <Education />
