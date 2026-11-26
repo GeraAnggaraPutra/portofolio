@@ -34,6 +34,7 @@ import {
   type Run,
 } from "@/lib/game-rules";
 import { cameraFor, loadArtwork, paint } from "@/lib/arcade-painter";
+import { createPondSurface } from "@/lib/pond-surface";
 import styles from "./game-arcade.module.css";
 
 const icons = [Waves, Flag, Leaf, Compass];
@@ -76,6 +77,7 @@ function GameSession({ world, run }: { world: World; run: Run }) {
   const [mode, setMode] = useState<Mode>(run.finish ? "ended" : "menu");
   const [hud, setHud] = useState(() => readHud(world, run));
   const canvas = useRef<HTMLCanvasElement>(null);
+  const waterCanvas = useRef<HTMLCanvasElement>(null);
   const shell = useRef<HTMLDivElement>(null);
   const artwork = useRef<Awaited<ReturnType<typeof loadArtwork>> | null>(null);
   const held = useRef(new Set<Direction>());
@@ -127,17 +129,26 @@ function GameSession({ world, run }: { world: World; run: Run }) {
       images = artwork.current,
       panel = shell.current;
     if (!surface || !panel || !images) return;
-    const ctx = surface.getContext("2d", { alpha: false });
+    const ctx = surface.getContext("2d", { alpha: world.id === "koi" });
     if (!ctx) {
       setMode("error");
       return;
     }
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const water = waterCanvas.current;
+    const pond = water && !motion.matches ? createPondSurface(water, images.plate) : null;
     let raf = 0,
       last = 0,
       lastHud = 0,
       width = 0,
       height = 0;
+    function draw() {
+      if (!ctx || !images || !width || !height) return;
+      const cam = cameraFor(width, height, run.position.x);
+      const rendered =
+        !motion.matches && pond?.draw(run, cam.left, cam.top, width / cam.scale, height / cam.scale);
+      paint(ctx, width, height, world, run, images, motion.matches, !!rendered);
+    }
     function fit() {
       if (!surface || !ctx || !images) return;
       width = surface.clientWidth;
@@ -146,8 +157,14 @@ function GameSession({ world, run }: { world: World; run: Run }) {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.65);
       surface.width = Math.round(width * dpr);
       surface.height = Math.round(height * dpr);
+      if (water && pond) {
+        // Refraction is low frequency. Keep its fill cost independent of device pixel ratio.
+        const factor = Math.min(1, 1100 / width);
+        water.width = Math.round(width * factor);
+        water.height = Math.round(height * factor);
+      }
       ctx.setTransform(surface.width / width, 0, 0, surface.height / height, 0, 0);
-      paint(ctx, width, height, world, run, images, motion.matches);
+      draw();
     }
     function frame(now: number) {
       if (!ctx || !images) return;
@@ -162,7 +179,7 @@ function GameSession({ world, run }: { world: World; run: Run }) {
         Number(held.current.has(key) || (taps.current[key] ?? 0) > now);
       const axis = { x: pressed("right") - pressed("left"), y: pressed("down") - pressed("up") };
       advance(world, run, axis, dt);
-      paint(ctx, width, height, world, run, images, motion.matches);
+      draw();
       if (now - lastHud >= 110 || run.finish) {
         setHud(readHud(world, run));
         lastHud = now;
@@ -195,6 +212,7 @@ function GameSession({ world, run }: { world: World; run: Run }) {
     return () => {
       cancelAnimationFrame(raf);
       resize.disconnect();
+      pond?.dispose();
       intersection.disconnect();
       clear();
       window.removeEventListener("keyup", release);
@@ -230,6 +248,7 @@ function GameSession({ world, run }: { world: World; run: Run }) {
       style={{ "--accent": world.color } as CSSProperties}
     >
       <div className={styles.stage} style={{ backgroundImage: `url('/games/${world.image}.webp')` }}>
+        {world.id === "koi" && <canvas ref={waterCanvas} className={styles.canvas} aria-hidden="true" />}
         <canvas
           ref={canvas}
           tabIndex={active ? 0 : -1}

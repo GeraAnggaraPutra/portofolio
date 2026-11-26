@@ -2,6 +2,7 @@ import {
   asteroidAt,
   asteroidCount,
   asteroidRadius,
+  beltCount,
   clamp,
   objective,
   spring,
@@ -177,6 +178,137 @@ function flower(ctx: Brush, site: Point) {
   ellipse(ctx, 0, 0, 2.8, 2.8, "#e2b75d");
   ctx.restore();
 }
+
+function pondDetails(ctx: Brush, run: Run, plate: Bitmap, hasShader: boolean) {
+  const t = run.time;
+  if (!hasShader) {
+    // Animate the source cascade even on devices using only the 2D canvas.
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(145, 192);
+    ctx.quadraticCurveTo(169, 218, 176, 274);
+    ctx.lineTo(212, 274);
+    ctx.quadraticCurveTo(201, 212, 172, 192);
+    ctx.closePath();
+    ctx.clip();
+    for (let y = 192; y < 275; y += 3) {
+      const sy = y - 3 * Math.sin(t * 9 - y * 0.16);
+      ctx.drawImage(
+        plate,
+        (145 * plate.width) / 1000,
+        (sy * plate.height) / 562,
+        (70 * plate.width) / 1000,
+        (3.2 * plate.height) / 562,
+        145,
+        y,
+        70,
+        3.2,
+      );
+    }
+    ctx.restore();
+    // Bend just the hanging branch tips around their attachment to the canopy.
+    for (const [x, y, w, h] of [
+      [232, 156, 47, 25],
+      [504, 80, 35, 21],
+      [791, 124, 41, 18],
+    ]) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, h, 0.25, 0, TAU);
+      ctx.clip();
+      ctx.translate(x - w, y - h);
+      ctx.rotate(0.015 * Math.sin(t * 1.5 + x));
+      ctx.translate(w - x, h - y);
+      ctx.drawImage(plate, 0, 0, 1000, 562);
+      ctx.restore();
+    }
+  }
+  for (const crest of run.ripples) {
+    const age = t - crest.born,
+      r = 3 + age * 32,
+      alpha = (1 - age / 1.6) * crest.power;
+    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = `rgba(240,224,191,${alpha * 0.24})`;
+    ctx.beginPath();
+    ctx.ellipse(crest.x, crest.y, r, r * 0.52, 0, 0.16, 2.55);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(20,49,41,${alpha * 0.24})`;
+    ctx.beginPath();
+    ctx.ellipse(crest.x, crest.y, r + 1, r * 0.52 + 1, 0, 3.05, 5.8);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 13; i++) {
+    const age = (t * 1.5 + i * 0.618) % 1;
+    const x = 173 + (i % 6) * 5 + Math.sin(i * 24) * age * 16,
+      y = 274 - 12 * age + 15 * age * age;
+    ellipse(ctx, x, y, 0.75, 0.85, `rgba(238,247,240,${0.58 * (1 - age)})`);
+  }
+  for (let i = 0; i < 7; i++) {
+    const progress = (t / (14 + i * 0.8) + i * 0.618) % 1;
+    const fall = Math.min(1, progress / 0.73),
+      drift = Math.max(0, progress - 0.73) * 65;
+    const x = 146 + ((i * 151) % 694) + fall * 36 + Math.sin(fall * 9 + i) * 11 + drift;
+    const surface = 315 + (i % 4) * 24,
+      y = 52 + (i % 3) * 18;
+    const py = y + (surface - y) * fall;
+    if (fall === 1) {
+      const radius = 3 + drift * 2;
+      ctx.lineWidth = 0.75;
+      ellipse(
+        ctx,
+        x - drift,
+        surface,
+        radius,
+        radius * 0.43,
+        `rgba(249,233,197,${0.26 * (1 - drift / 18)})`,
+        true,
+      );
+    }
+    ctx.save();
+    ctx.translate(x, py);
+    ctx.rotate(fall === 1 ? 0.36 : Math.sin(fall * 11 + i) * 1.1);
+    ctx.scale(1, fall === 1 ? 0.42 : 0.4 + 0.6 * Math.abs(Math.cos(fall * 13 + i)));
+    ctx.globalAlpha = clamp((1 - progress) * 9, 0, 1);
+    ctx.fillStyle = i % 2 ? "#9e3921" : "#be622b";
+    ctx.beginPath();
+    ctx.moveTo(0, 3);
+    ctx.lineTo(-4, -0.8);
+    ctx.lineTo(-1.2, -0.5);
+    ctx.lineTo(-2.1, -3.2);
+    ctx.lineTo(-0.5, -2);
+    ctx.lineTo(0.6, -5);
+    ctx.lineTo(1, -1.6);
+    ctx.lineTo(4, -3);
+    ctx.lineTo(2, 0.1);
+    ctx.lineTo(4.5, -0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function orbitalBelt(ctx: Brush, images: Images, time: number) {
+  // Distant debris shares the orbital plane with the six rocks in the flight corridor.
+  for (let layer = 0; layer < 2; layer++) {
+    for (let i = 0; i < asteroidCount + beltCount; i++) {
+      const rock = asteroidAt(i, time);
+      if (
+        rock.hidden ||
+        Number(rock.depth >= 0) !== layer ||
+        rock.x < -36 ||
+        rock.x > 1036 ||
+        rock.y < -36 ||
+        rock.y > 598
+      )
+        continue;
+      const hazard = i < asteroidCount;
+      const size = (hazard ? asteroidRadius(i) * 2.6 : 1.4 + ((i * 37) % 13) * 0.49) * rock.scale;
+      ctx.globalAlpha = hazard ? 1 : 0.5 + 0.21 * rock.depth;
+      sprite(ctx, images.asteroid, rock.x, rock.y, size, i + time * (0.16 + (i % 5) * 0.065));
+    }
+  }
+  ctx.globalAlpha = 1;
+}
 function drawSites(ctx: Brush, world: World, run: Run, images: Images) {
   const t = run.time;
   world.sites.forEach((site, i) => {
@@ -260,13 +392,15 @@ function actor(ctx: Brush, world: World, run: Run, images: Images) {
   const speed = Math.hypot(run.velocity.x, run.velocity.y) / world.speed;
   if (world.id === "koi") {
     run.companions.forEach((f, i) => {
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = 0.72 + 0.07 * Math.sin(t * 0.69 + i);
       shadow(ctx, f.x + 3, f.y + 5, 18, 6, 0.31);
-      sprite(ctx, images.koi, f.x, f.y, 44 + i * 3, f.heading, t * (3 + speed * 3) + i);
+      sprite(ctx, images.koi, f.x, f.y, 44 + i * 3, f.heading, f.beat * 12);
     });
     ctx.globalAlpha = 1;
     shadow(ctx, x + 4, y + 6, 25, 9, 0.4);
-    sprite(ctx, images.koi, x, y, 70 + (y - 370) * 0.1, h, t * (3 + speed * 4));
+    ctx.globalAlpha = 0.86;
+    sprite(ctx, images.koi, x, y, 70 + (y - 370) * 0.1, h, run.swimBeat * 12);
+    ctx.globalAlpha = 1;
   } else if (world.id === "boat") {
     const size = 87 + (y - 280) * 0.19;
     ctx.save();
@@ -346,21 +480,18 @@ export function paint(
   run: Run,
   images: Images,
   quiet: boolean,
+  pondRendered = false,
 ) {
   const { scale, left, top } = cameraFor(width, height, run.position.x);
   ctx.save();
   ctx.scale(scale, scale);
   ctx.translate(-left, -top);
-  ctx.drawImage(images.plate, 0, 0, 1000, 562);
-  if (!quiet && (world.id === "boat" || world.id === "koi"))
+  if (pondRendered) ctx.clearRect(left, top, width / scale, height / scale);
+  else ctx.drawImage(images.plate, 0, 0, 1000, 562);
+  if (!quiet && !pondRendered && (world.id === "boat" || world.id === "koi"))
     water(ctx, images.plate, run.time, world.id === "boat");
   drawSites(ctx, world, run, images);
-  if (world.id === "ship") {
-    for (let i = 0; i < asteroidCount; i++) {
-      const r = asteroidAt(i, run.time);
-      sprite(ctx, images.asteroid, r.x, r.y, asteroidRadius(i) * 2.6, i + run.time * 0.21);
-    }
-  }
+  if (world.id === "ship") orbitalBelt(ctx, images, run.time);
   if (run.destination && !run.finish) {
     ctx.lineWidth = 1.2;
     ellipse(ctx, run.destination.x, run.destination.y, 7, 4, "#fff9d6", true);
@@ -378,8 +509,9 @@ export function paint(
     ctx.lineTo(target.x, y + 5);
     ctx.fill();
   }
-  if (!quiet) wake(ctx, run, world);
+  if (!quiet && world.id !== "koi") wake(ctx, run, world);
   actor(ctx, world, run, images);
+  if (!quiet && world.id === "koi") pondDetails(ctx, run, images.plate, pondRendered);
   actionEffect(ctx, world, run, target);
   if (!run.finish && (target.x < left + 20 || target.x > left + width / scale - 20)) {
     const side = target.x < left ? -1 : 1,

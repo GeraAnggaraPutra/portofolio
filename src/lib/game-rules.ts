@@ -114,6 +114,8 @@ export const worlds: World[] = [
 export const spring: Site = { x: 647, y: 183, name: "Waterfall spring" };
 export const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+export type Swimmer = Point & { heading: number; speed: number; beat: number };
+export type PondRipple = Point & { born: number; power: number };
 export type Run = {
   position: Point;
   velocity: Point;
@@ -129,7 +131,9 @@ export type Run = {
   impact: number;
   finish: "won" | "lost" | null;
   message: string;
-  companions: (Point & { heading: number })[];
+  companions: Swimmer[];
+  swimBeat: number;
+  ripples: PondRipple[];
   trail: (Point & { age: number; heading: number })[];
   trailTime: number;
 };
@@ -149,10 +153,14 @@ export function newRun(world: World): Run {
     impact: 0,
     finish: null,
     message: "",
+    swimBeat: 0,
+    ripples: [],
     companions: Array.from({ length: 3 }, (_, i) => ({
       x: world.spawn.x + 28 + i * 23,
       y: world.spawn.y + 18 + i * 5,
       heading: -0.45,
+      speed: 12,
+      beat: i * 0.37,
     })),
     trail: [],
     trailTime: 0,
@@ -200,21 +208,97 @@ export function beginAction(world: World, run: Run) {
   run.progress = 0;
   run.message = "";
 }
-export function asteroidAt(i: number, time: number): Point {
-  const origins = [
-    [368, 293],
-    [480, 241],
-    [667, 276],
-    [765, 196],
-    [300, 173],
-    [595, 403],
-  ];
-  const [x, y] = origins[i],
-    phase = time * (0.34 + i * 0.025) + i * 1.63;
-  return { x: x + Math.cos(phase) * (36 + i * 2), y: y + Math.sin(phase * 0.89) * (25 + i * 1.8) };
-}
+// Centre and apparent limb of the Earth in the orbital landscape, in scene pixels.
+const earth = { x: 888, y: 335, rx: 342, ry: 302 };
 export const asteroidCount = 6;
 export const asteroidRadius = (i: number) => 13 + (i % 3) * 5;
+export const beltCount = 208;
+const orbits = Array.from({ length: asteroidCount + beltCount }, (_, i) => {
+  const scatter = (n: number) => (Math.sin((i + 1) * n) * 43758.5453) % 1;
+  const radius = 600 + scatter(12.24) * 157;
+  const tilt = 0.21 + scatter(29.2) * 0.045;
+  return {
+    radius,
+    sin: Math.sin(tilt),
+    cos: Math.cos(tilt),
+    flatten: 0.22 + scatter(39.1) * 0.09,
+    phase: Math.PI + i * 2.399963,
+    rate: 0.082 * (600 / radius) ** 1.5,
+  };
+});
+export function asteroidAt(i: number, time: number) {
+  const orbit = orbits[i],
+    phase = orbit.phase + time * orbit.rate;
+  const depth = Math.sin(phase),
+    scale = 1 / (1 - depth * 0.2);
+  const u = orbit.radius * Math.cos(phase) * scale;
+  const v = orbit.radius * orbit.flatten * depth * scale;
+  const dx = u * orbit.cos - v * orbit.sin,
+    dy = u * orbit.sin + v * orbit.cos;
+  const hidden = depth < 0 && (dx / earth.rx) ** 2 + (dy / earth.ry) ** 2 < 1;
+  return { x: earth.x + dx, y: earth.y + dy, depth, scale, hidden };
+}
+
+function stroke(
+  run: Run,
+  p: Point,
+  heading: number,
+  beat: number,
+  speed: number,
+  dt: number,
+  size: number,
+) {
+  // Emit a crest at each tail reversal. Its origin stays in the water as the fish moves on.
+  const next = beat + dt * (0.65 + Math.min(speed, 180) * 0.013);
+  if (Math.floor(next * 2) !== Math.floor(beat * 2)) {
+    const side = Math.cos(next * 2 * Math.PI) * size * 0.15;
+    run.ripples.push({
+      x: p.x - Math.sin(heading) * size + Math.cos(heading) * side,
+      y: p.y + Math.cos(heading) * size * 0.7 + Math.sin(heading) * side,
+      born: run.time,
+      power: (clamp(0.12 + speed / 155, 0.12, 1) * size) / 23,
+    });
+  }
+  return next;
+}
+
+function swimSchool(world: World, run: Run, speed: number, dt: number) {
+  while (run.ripples.length && run.time - run.ripples[0].born > 1.6) run.ripples.shift();
+  run.swimBeat = stroke(run, run.position, run.heading, run.swimBeat, speed, dt, 23);
+  run.companions.forEach((fish, i) => {
+    const feeding = run.progress !== null;
+    const phase = i * 2.4 + run.time * (feeding ? 0.63 : 0.39);
+    const spread = feeding ? 21 : 42;
+    const target = limitPoint(world, {
+      x: run.position.x + Math.cos(phase) * spread - Math.sin(run.heading) * speed * 0.19,
+      y: run.position.y + Math.sin(phase) * spread * 0.65 + Math.cos(run.heading) * speed * 0.13,
+    });
+    let dx = target.x - fish.x,
+      dy = target.y - fish.y;
+    for (const other of run.companions) {
+      if (fish === other) continue;
+      const gap = Math.max(1, distance(fish, other));
+      if (gap < 24) {
+        dx += ((fish.x - other.x) * (24 - gap)) / gap;
+        dy += ((fish.y - other.y) * (24 - gap)) / gap;
+      }
+    }
+    const angle = Math.atan2(dx, -dy) - fish.heading;
+    const turn = Math.atan2(Math.sin(angle), Math.cos(angle));
+    fish.heading += clamp(turn, -3.6 * dt, 3.6 * dt);
+    const cruise = clamp(Math.hypot(dx, dy) * 2.1, 8, 176) * (0.58 + 0.42 * Math.max(0, Math.cos(turn)));
+    fish.speed += (cruise - fish.speed) * (1 - Math.exp(-dt * 4));
+    const step = fish.speed * dt * (1 + 0.08 * Math.sin(fish.beat * Math.PI * 2));
+    Object.assign(
+      fish,
+      limitPoint(world, {
+        x: fish.x + Math.sin(fish.heading) * step,
+        y: fish.y - Math.cos(fish.heading) * step,
+      }),
+    );
+    fish.beat = stroke(run, fish, fish.heading, fish.beat, fish.speed, dt, 14 + i);
+  });
+}
 
 function completeAction(world: World, run: Run) {
   run.progress = null;
@@ -279,25 +363,13 @@ export function advance(world: World, run: Run, axis: Point, dt: number) {
     p.age += dt;
   });
   while (run.trail.length && run.trail[0].age > 1.5) run.trail.shift();
-  if (world.id === "koi") {
-    run.companions.forEach((fish, i) => {
-      const leader = i === 0 ? run.position : run.companions[i - 1];
-      const h = run.heading,
-        spread = run.progress === null ? 1 : 0.45;
-      const tx = leader.x - Math.sin(h) * 26 * spread + Math.cos(run.time * 1.3 + i * 2) * 13;
-      const ty = leader.y + Math.cos(h) * 16 * spread + Math.sin(run.time + i) * 10;
-      const a = Math.atan2(tx - fish.x, fish.y - ty) - fish.heading;
-      fish.heading += Math.atan2(Math.sin(a), Math.cos(a)) * (1 - Math.exp(-dt * 3));
-      fish.x += (tx - fish.x) * (1 - Math.exp(-dt * 2.8));
-      fish.y += (ty - fish.y) * (1 - Math.exp(-dt * 2.8));
-    });
-  }
+  if (world.id === "koi") swimSchool(world, run, dt > 0 ? distance(old, run.position) / dt : 0, dt);
   if (world.id === "ship") {
     run.impact = Math.max(0, run.impact - dt);
     run.fuel = Math.max(0, run.fuel - distance(old, run.position) * 0.047);
     for (let i = 0; i < asteroidCount && run.impact === 0; i++) {
       const rock = asteroidAt(i, run.time);
-      if (distance(rock, run.position) < asteroidRadius(i) + 10) {
+      if (!rock.hidden && distance(rock, run.position) < asteroidRadius(i) * rock.scale + 10) {
         run.shields--;
         run.impact = 2;
         run.message = "Asteroid impact.";

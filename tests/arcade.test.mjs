@@ -80,3 +80,34 @@ test("a koi feeding waits for the school to reach the lead fish", () => {
   assert.equal(run.current,1);
   assert.ok(run.companions.every(f=>distance(f,run.position)<62));
 });
+
+test("tail strokes leave stationary crests which expire after the school passes", () => {
+  const world = worlds[0], run = newRun(world);
+  for(let i=0;i<20;i++) advance(world,run,{x:1,y:0},step);
+  const crest = run.ripples[0], original = {...crest};
+  assert.ok(crest.power > 0);
+  advance(world,run,{x:0,y:-1},step);
+  assert.deepEqual(crest, original);
+  for(let i=0;i<65;i++) advance(world,run,idle,step);
+  assert.ok(!run.ripples.includes(crest));
+  assert.ok(run.companions.every(fish=>fish.beat>1 && Number.isFinite(fish.heading)));
+});
+
+test("Earth occludes far-side rocks and shields are only hit by visible hazards", () => {
+  const world=worlds.find(w=>w.id==="ship");
+  let hidden,near;
+  for(let frame=0;frame<3600 && (!hidden || !near);frame++){
+    const t=frame*step,rock=asteroidAt(0,t);
+    if(rock.x<65 || rock.x>935 || rock.y<78 || rock.y>495)continue;
+    if(rock.hidden)hidden={t,rock};
+    if(rock.depth>.5 && !rock.hidden)near={t,rock};
+  }
+  assert.ok(hidden && near);
+  for(const {t,rock} of [hidden,near]){
+    const run=newRun(world);
+    run.time=t-step;
+    run.position={x:rock.x,y:rock.y};
+    advance(world,run,idle,step);
+    assert.equal(run.shields,rock.hidden?3:2);
+  }
+});

@@ -124,11 +124,13 @@ export function koi() {
   const tail = new T.Group();
   tail.position.z = 0.89;
   root.add(tail);
+  const pectorals = [];
   for (const side of [-1, 1]) {
     const blade = oval(tail, fin, side * 0.12, 0, 0.19, 0.1, 0.033, 0.34);
     blade.rotation.y = side * 0.52;
     const paddle = oval(root, fin, side * 0.33, -0.08, -0.28, 0.13, 0.035, 0.32);
     paddle.rotation.y = side * 0.78;
+    pectorals.push({ paddle, side });
     oval(root, material("#151913"), side * 0.235, 0.095, -0.85, 0.048, 0.045, 0.055);
     beam(root, fin, [side * 0.105, -0.045, -1.04], [side * 0.19, -0.12, -1.17], 0.012);
   }
@@ -144,6 +146,11 @@ export function koi() {
         vertices.setX(i, base[i * 3] + Math.sin(phase - z * 1.4) * 0.21 * weight * weight);
       }
       vertices.needsUpdate = true;
+      geo.computeVertexNormals();
+      for (const { paddle, side } of pectorals) {
+        paddle.rotation.y = side * (0.78 + Math.sin(phase + .6) * .20);
+        paddle.rotation.z = side * Math.cos(phase + .6) * .18;
+      }
       tail.position.x = Math.sin(phase - 1.3) * 0.2;
       tail.rotation.y = Math.cos(phase - 1.3) * 0.48;
     },

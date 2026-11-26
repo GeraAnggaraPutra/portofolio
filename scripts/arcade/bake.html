@@ -44,13 +44,13 @@
     camera.position.set(0, name === "lantern" ? 3 : 7, name === "lantern" ? 7 : 5);
     camera.lookAt(0, 0, 0);
     const directions = ["lantern", "sapling"].includes(name) ? 1 : 24;
-    const poses = pose ? 4 : 1,
+    const poses = name === "koi" ? 12 : pose ? 4 : 1,
       sheet = document.createElement("canvas");
     sheet.width = directions * 160;
     sheet.height = poses * 160;
     const ctx = sheet.getContext("2d");
     for (let frame = 0; frame < poses; frame++) {
-      pose?.((frame * Math.PI) / 2);
+      pose?.((frame * Math.PI * 2) / poses);
       for (let d = 0; d < directions; d++) {
         root.rotation.y = (-d * Math.PI * 2) / directions;
         renderer.render(scene, camera);
