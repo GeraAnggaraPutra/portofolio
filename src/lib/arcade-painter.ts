@@ -4,6 +4,10 @@ import {
   asteroidRadius,
   beltCount,
   clamp,
+  distance,
+  dragonfly,
+  dropPoint,
+  techniques,
   objective,
   spring,
   type Point,
@@ -38,10 +42,13 @@ export async function loadArtwork(world: World): Promise<Images> {
     ]),
   );
 }
-export function cameraFor(width: number, height: number, x: number) {
-  const scale = Math.max(width / 1000, height / 562);
+export function cameraFor(width: number, height: number, position: Point, world: World) {
+  const magnification = { koi: 1.22, boat: 1.14, drone: 1.19, ship: 1.1 }[world.id];
+  const scale = Math.max(width / 1000, height / 562) * magnification;
+  const x = position.x;
   const left = clamp(x - width / (2 * scale), 0, Math.max(0, 1000 - width / scale));
-  return { scale, left, top: (562 - height / scale) / 2 };
+  const top = clamp(281 + (position.y - 281) * 0.22 - height / (2 * scale), 0, 562 - height / scale);
+  return { scale, left, top };
 }
 function sprite(ctx: Brush, img: Bitmap, x: number, y: number, size: number, heading = 0, frame = 0) {
   const cols = Math.round(img.width / 160),
@@ -309,6 +316,62 @@ function orbitalBelt(ctx: Brush, images: Images, time: number) {
   }
   ctx.globalAlpha = 1;
 }
+
+function islandWater(ctx: Brush, plate: Bitmap, t: number) {
+  // Each ribbon follows a photographed lip and its plunge pool. Advect narrow
+  // bands inside the falling water so the surrounding rock stays fixed.
+  for (const [lipX, lipY, footX, footY, width] of [
+    [728, 31, 715, 69, 10],
+    [693, 80, 681, 129, 13],
+  ]) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(lipX - width * 0.6, lipY);
+    ctx.lineTo(lipX + width, lipY);
+    ctx.quadraticCurveTo(footX + width, footY - 15, footX + width, footY);
+    ctx.lineTo(footX - width, footY);
+    ctx.closePath();
+    ctx.clip();
+    for (let y = lipY; y < footY; y += 3) {
+      const depth = (y - lipY) / (footY - lipY),
+        left = footX - width - 2,
+        w = lipX + width - left;
+      const sy = y - Math.sin(t * 9 - y * 0.34) * Math.sin(Math.PI * depth) * 3.2;
+      ctx.drawImage(
+        plate,
+        (left * plate.width) / 1000,
+        (sy * plate.height) / 562,
+        (w * plate.width) / 1000,
+        (3.3 * plate.height) / 562,
+        left,
+        y,
+        w,
+        3.3,
+      );
+    }
+    ctx.restore();
+    for (let i = 0; i < 3; i++) {
+      const age = (t * 0.68 + i / 3) % 1;
+      ctx.strokeStyle = `rgba(224,249,250,${(1 - age) * 0.38})`;
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.ellipse(footX, footY, 5 + age * width * 1.5, 1 + age * 4, -0.12, 0.05, 2.99);
+      ctx.stroke();
+    }
+  }
+  // Sets of small waves break at an angle across the actual southern beach.
+  for (let i = 0; i < 2; i++) {
+    const age = (t * 0.16 + i * 0.5) % 1,
+      offset = 16 * (1 - age);
+    ctx.strokeStyle = `rgba(239,249,232,${Math.sin(age * Math.PI) * 0.4})`;
+    ctx.lineWidth = 0.9 + age;
+    ctx.beginPath();
+    ctx.moveTo(445, 482 + offset);
+    ctx.bezierCurveTo(519, 462 + offset, 568, 442 + offset, 627, 470 + offset);
+    ctx.quadraticCurveTo(665, 495 + offset, 719, 504 + offset);
+    ctx.stroke();
+  }
+}
 function drawSites(ctx: Brush, world: World, run: Run, images: Images) {
   const t = run.time;
   world.sites.forEach((site, i) => {
@@ -343,9 +406,11 @@ function drawSites(ctx: Brush, world: World, run: Run, images: Images) {
       }
     } else if (world.id === "drone") {
       if (lit) {
-        shadow(ctx, x + 8, y + 2, 20, 6, 0.48);
-        sprite(ctx, images.sapling, x, y - 18, 54);
-        sprite(ctx, images.sapling, x + 16, y - 4, 28, 0.3);
+        const growth = 0.16 + 0.84 * (1 - Math.exp(-1.4 * (t - run.plantedAt[i])));
+        const sway = Math.sin(t * 1.65 + i) * 1.4;
+        shadow(ctx, x + 8, y + 2, 20 * growth, 6 * growth, 0.48);
+        sprite(ctx, images.sapling, x + sway * growth, y - 18 * growth, 54 * growth);
+        sprite(ctx, images.sapling, x + 16, y - 4 * growth, 28 * growth, 0.3);
       } else {
         shadow(ctx, x, y, 17, 6, 0.35);
         for (let k = 0; k < 3; k++) {
@@ -398,8 +463,19 @@ function actor(ctx: Brush, world: World, run: Run, images: Images) {
     });
     ctx.globalAlpha = 1;
     shadow(ctx, x + 4, y + 6, 25, 9, 0.4);
-    ctx.globalAlpha = 0.86;
-    sprite(ctx, images.koi, x, y, 70 + (y - 370) * 0.1, h, run.swimBeat * 12);
+    const leap = run.maneuver
+      ? Math.sin(Math.PI * clamp((t - run.maneuver.started) / techniques.koi.duration, 0, 1))
+      : 0;
+    ctx.globalAlpha = 0.82 + leap * 0.18;
+    sprite(
+      ctx,
+      images.koi,
+      x,
+      y - leap * 29,
+      (70 + (y - 370) * 0.1) * (1 + leap * 0.12),
+      h,
+      run.swimBeat * 12,
+    );
     ctx.globalAlpha = 1;
   } else if (world.id === "boat") {
     const size = 87 + (y - 280) * 0.19;
@@ -407,10 +483,10 @@ function actor(ctx: Brush, world: World, run: Run, images: Images) {
     ctx.translate(x, y + 7);
     ctx.scale(1, -0.48);
     ctx.globalAlpha = 0.19;
-    sprite(ctx, images.boat, 0, 0, size, h, t * speed * 5);
+    sprite(ctx, images.boat, 0, 0, size, h, run.oarBeat);
     ctx.restore();
     shadow(ctx, x, y + 4, size * 0.39, size * 0.13, 0.6);
-    sprite(ctx, images.boat, x, y + Math.sin(t * 1.6) * 1.3, size, h, t * (speed > 0.07 ? 4.6 : 0.65));
+    sprite(ctx, images.boat, x, y + Math.sin(t * 1.6) * 1.3, size, h, run.oarBeat);
   } else if (world.id === "drone") {
     const height = run.progress !== null ? 11 : 23 + Math.sin(t * 2) * 2;
     shadow(ctx, x + 9, y + 3, 31, 10, 0.64);
@@ -441,6 +517,110 @@ function actor(ctx: Brush, world: World, run: Run, images: Images) {
     if (run.impact > 0) {
       ctx.lineWidth = 2;
       ellipse(ctx, x, y, 34, 28, `rgba(255,170,132,${run.impact * 0.4})`, true);
+    }
+  }
+}
+
+function drawDragonfly(ctx: Brush, world: World, run: Run, quiet: boolean) {
+  if (run.caughtAt === run.current) return;
+  const insect = dragonfly(world, run),
+    t = run.time;
+  const height = 15 + Math.sin(t * 2.3) * 2;
+  shadow(ctx, insect.x + 3, insect.y + 1, 8, 2.8, 0.52);
+  ctx.save();
+  ctx.translate(insect.x, insect.y - height);
+  ctx.rotate(
+    Math.atan2(17 * Math.cos(t * 0.91 + Math.PI / 2), 26 * Math.cos(t * 0.79) + 17 * Math.cos(t * 1.87)),
+  );
+  const span = quiet ? 1 : 0.72 + Math.cos(t * 42) * 0.25;
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 2; i++) {
+      ctx.save();
+      ctx.rotate(side * (0.22 + i * 0.42));
+      ellipse(ctx, 0, side * 5.6 * span, 2.3, 7 * span, "rgba(195,237,242,.72)");
+      ctx.lineWidth = 0.55;
+      ctx.strokeStyle = "#63858b";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, side * 11 * span);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  ellipse(ctx, -3.6, 0, 7, 1.05, "#498e91");
+  ellipse(ctx, 1, 0, 3.2, 1.85, "#183e43");
+  ellipse(ctx, 3.6, 0, 1.9, 2.2, "#6cbdb8");
+  ctx.restore();
+}
+
+function equipment(ctx: Brush, world: World, run: Run, quiet: boolean) {
+  const m = run.maneuver,
+    t = run.time,
+    p = m ? clamp((t - m.started) / techniques[world.id].duration, 0, 1) : 0;
+  if (world.id === "koi") {
+    drawDragonfly(ctx, world, run, quiet);
+    if (m && !quiet) {
+      for (let i = 0; i < 12; i++) {
+        const angle = i * 2.4,
+          r = 6 + p * 24;
+        ellipse(
+          ctx,
+          m.from.x + Math.cos(angle) * r,
+          m.from.y + Math.sin(angle) * r * 0.46 - 14 * Math.sin(Math.PI * p),
+          1.2,
+          0.85,
+          `rgba(231,242,228,${1 - p})`,
+        );
+      }
+    }
+  } else if (world.id === "boat" && m) {
+    for (const side of [-1, 1]) {
+      const x = m.from.x + side * Math.cos(m.heading) * 22,
+        y = m.from.y + side * Math.sin(m.heading) * 14;
+      ctx.lineWidth = 1.2;
+      ellipse(ctx, x, y, 4 + p * 22, 2 + p * 8, `rgba(253,223,172,${(1 - p) * 0.72})`, true);
+    }
+  } else if (world.id === "drone" && run.water > 0 && run.progress === null) {
+    const hit = m?.to ?? dropPoint(run);
+    const aligned = world.sites.some((s, i) => !run.visited[i] && distance(s, hit) < 28);
+    ctx.lineWidth = 1.3;
+    ctx.strokeStyle = aligned ? "#d8f8aa" : "rgba(246,242,210,.74)";
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.ellipse(hit.x, hit.y, 12, 6, 0, (i * Math.PI) / 2 + 0.2, (i * Math.PI) / 2 + 1.2);
+      ctx.stroke();
+    }
+    if (m) {
+      const x = m.from.x + (hit.x - m.from.x) * p,
+        y = m.from.y + (hit.y - m.from.y) * p;
+      shadow(ctx, x, y, 5, 2, 0.62);
+      ellipse(ctx, x, y - 27 * (1 - p * p), 3.2, 4.2, "#ae8c59");
+      ellipse(ctx, x - 1, y - 28 * (1 - p * p), 1.2, 2, "#dad09c");
+    }
+  } else if (world.id === "ship") {
+    if (m) {
+      ctx.save();
+      ctx.translate(run.position.x, run.position.y);
+      const shield = ctx.createRadialGradient(-5, -5, 6, 0, 0, 43);
+      shield.addColorStop(0, "rgba(114,221,255,0)");
+      shield.addColorStop(0.84, "rgba(76,173,214,.09)");
+      shield.addColorStop(0.97, "rgba(167,235,255,.65)");
+      shield.addColorStop(1, "transparent");
+      ctx.fillStyle = shield;
+      ctx.scale(1, 0.81);
+      ctx.fillRect(-44, -44, 88, 88);
+      ctx.restore();
+    }
+    for (let i = 0; i < asteroidCount; i++) {
+      const a = asteroidAt(i, t),
+        dist = distance(a, run.position);
+      if (a.hidden || dist > 94 || dist < 1) continue;
+      const angle = Math.atan2(a.y - run.position.y, a.x - run.position.x);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = m ? "#9fdef4" : "#f1b97a";
+      ctx.beginPath();
+      ctx.arc(run.position.x, run.position.y, 36, angle - 0.27, angle + 0.27);
+      ctx.stroke();
     }
   }
 }
@@ -482,7 +662,7 @@ export function paint(
   quiet: boolean,
   pondRendered = false,
 ) {
-  const { scale, left, top } = cameraFor(width, height, run.position.x);
+  const { scale, left, top } = cameraFor(width, height, run.position, world);
   ctx.save();
   ctx.scale(scale, scale);
   ctx.translate(-left, -top);
@@ -490,6 +670,21 @@ export function paint(
   else ctx.drawImage(images.plate, 0, 0, 1000, 562);
   if (!quiet && !pondRendered && (world.id === "boat" || world.id === "koi"))
     water(ctx, images.plate, run.time, world.id === "boat");
+  if (world.id === "boat") {
+    const dusk = run.visited.filter(Boolean).length / world.sites.length;
+    ctx.fillStyle = `rgba(19,24,59,${0.32 * dusk})`;
+    ctx.fillRect(0, 0, 1000, 562);
+  } else if (world.id === "drone" && !quiet) {
+    islandWater(ctx, images.plate, run.time);
+    // Broad soft cloud shadows travel over the terrain, below the drone and its payload.
+    for (let i = 0; i < 2; i++) {
+      ctx.save();
+      ctx.translate(((run.time * (8 + i * 2) + i * 633) % 1590) - 260, 155 + i * 170);
+      ctx.scale(1, 0.42);
+      glow(ctx, 0, 0, 260, "rgba(31,47,52,.22)", "rgba(31,47,52,0)");
+      ctx.restore();
+    }
+  }
   drawSites(ctx, world, run, images);
   if (world.id === "ship") orbitalBelt(ctx, images, run.time);
   if (run.destination && !run.finish) {
@@ -511,6 +706,7 @@ export function paint(
   }
   if (!quiet && world.id !== "koi") wake(ctx, run, world);
   actor(ctx, world, run, images);
+  equipment(ctx, world, run, quiet);
   if (!quiet && world.id === "koi") pondDetails(ctx, run, images.plate, pondRendered);
   actionEffect(ctx, world, run, target);
   if (!run.finish && (target.x < left + 20 || target.x > left + width / scale - 20)) {

@@ -116,6 +116,37 @@ export const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y)
 export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 export type Swimmer = Point & { heading: number; speed: number; beat: number };
 export type PondRipple = Point & { born: number; power: number };
+export const techniques = {
+  koi: {
+    label: "Breach",
+    hint: "Leap beneath the blue dragonfly to catch it before feeding the school.",
+    tally: "dragonflies caught",
+    duration: 0.78,
+    cooldown: 1.65,
+  },
+  boat: {
+    label: "Pull oars",
+    hint: "Pull as the stroke meter reaches the gold mark for a longer glide.",
+    tally: "timed strokes",
+    duration: 0.74,
+    cooldown: 0.84,
+  },
+  drone: {
+    label: "Drop seed",
+    hint: "Lead a clearing with the landing sight to plant in flight. Each drop uses water.",
+    tally: "aerial plantings",
+    duration: 0.82,
+    cooldown: 1.05,
+  },
+  ship: {
+    label: "Pulse shield",
+    hint: "Trigger a short shield burst before an asteroid hits. Watch its recharge.",
+    tally: "impacts deflected",
+    duration: 1.25,
+    cooldown: 4.3,
+  },
+} as const;
+type Maneuver = { started: number; from: Point; to: Point; heading: number; strong: boolean };
 export type Run = {
   position: Point;
   velocity: Point;
@@ -136,6 +167,13 @@ export type Run = {
   ripples: PondRipple[];
   trail: (Point & { age: number; heading: number })[];
   trailTime: number;
+  maneuver: Maneuver | null;
+  readyAt: number;
+  techniqueHits: number;
+  caughtAt: number;
+  plantedAt: number[];
+  notice: { text: string; until: number } | null;
+  oarBeat: number;
 };
 export function newRun(world: World): Run {
   return {
@@ -164,7 +202,49 @@ export function newRun(world: World): Run {
     })),
     trail: [],
     trailTime: 0,
+    maneuver: null,
+    readyAt: 0,
+    techniqueHits: 0,
+    caughtAt: -1,
+    plantedAt: world.sites.map(() => -10),
+    notice: null,
+    oarBeat: 0,
   };
+}
+export function dragonfly(world: World, run: Run): Point {
+  const lily = world.sites[run.current],
+    t = run.time;
+  return {
+    x: lily.x + 33 * Math.sin(t * 0.79) + 9 * Math.sin(t * 1.87),
+    y: lily.y + 19 * Math.cos(t * 0.91),
+  };
+}
+export function strokeMeter(t: number) {
+  return 0.5 - 0.5 * Math.cos(t * Math.PI * 1.22);
+}
+export function dropPoint(run: Run): Point {
+  const flight = techniques.drone.duration;
+  return {
+    x: run.position.x + run.velocity.x * flight * 0.6 + Math.sin(run.time * 0.7) * 13,
+    y: run.position.y + run.velocity.y * flight * 0.6 + 7 * Math.cos(run.time * 0.48),
+  };
+}
+export function triggerTechnique(world: World, run: Run) {
+  if (run.finish || run.progress !== null || run.maneuver || run.time < run.readyAt) return;
+  if (world.id === "drone" && !run.water) return;
+  const strong = world.id === "boat" && strokeMeter(run.time) >= 0.76;
+  run.maneuver = {
+    started: run.time,
+    from: { ...run.position },
+    to: world.id === "drone" ? dropPoint(run) : { ...run.position },
+    heading: run.heading,
+    strong,
+  };
+  run.readyAt = run.time + techniques[world.id].cooldown;
+  if (strong) {
+    run.techniqueHits++;
+    run.notice = { text: "Clean stroke", until: run.time + 1.15 };
+  }
 }
 export function objective(world: World, run: Run) {
   return world.id === "drone" && run.water === 0 ? spring : world.sites[run.current];
@@ -193,7 +273,7 @@ export function lakeWind(time: number) {
 }
 export const lightingThreshold = 0.62;
 export function beginAction(world: World, run: Run) {
-  if (run.finish || run.progress !== null) return;
+  if (run.finish || run.progress !== null || run.maneuver) return;
   const target = objective(world, run);
   if (distance(run.position, target) > world.reach) {
     run.message = "Move closer to " + target.name + ".";
@@ -300,22 +380,57 @@ function swimSchool(world: World, run: Run, speed: number, dt: number) {
   });
 }
 
-function completeAction(world: World, run: Run) {
+function completeAction(world: World, run: Run, siteIndex = run.current) {
   run.progress = null;
   if (world.id === "drone" && run.water === 0) {
     run.water = 2;
     run.message = "Tank refilled.";
     return;
   }
-  run.visited[run.current] = true;
-  run.message = world.sites[run.current].name + " complete.";
-  if (world.id === "drone") run.water--;
+  run.visited[siteIndex] = true;
+  run.message = world.sites[siteIndex].name + " complete.";
+  if (world.id === "drone") {
+    run.water--;
+    run.plantedAt[siteIndex] = run.time;
+  }
   if (world.id === "ship") run.fuel = Math.min(100, run.fuel + 23);
-  if (run.current === world.sites.length - 1) {
+  if (run.visited.every(Boolean)) {
     run.finish = "won";
     return;
   }
-  run.current++;
+  while (run.visited[run.current]) run.current = (run.current + 1) % world.sites.length;
+}
+function resolveManeuver(world: World, run: Run) {
+  const maneuver = run.maneuver;
+  if (!maneuver) return;
+  const fraction = (run.time - maneuver.started) / techniques[world.id].duration;
+  if (
+    world.id === "koi" &&
+    fraction >= 0.28 &&
+    fraction <= 0.68 &&
+    run.caughtAt !== run.current &&
+    distance(run.position, dragonfly(world, run)) < 24
+  ) {
+    run.caughtAt = run.current;
+    run.techniqueHits++;
+    run.notice = { text: "Dragonfly caught", until: run.time + 1.5 };
+  }
+  if (fraction < 1) return;
+  run.maneuver = null;
+  if (world.id === "koi") run.ripples.push({ ...run.position, born: run.time, power: 1.45 });
+  if (world.id === "drone") {
+    const landing = world.sites.findIndex(
+      (site, i) => !run.visited[i] && distance(site, maneuver.to) <= 28,
+    );
+    if (landing >= 0) {
+      run.techniqueHits++;
+      completeAction(world, run, landing);
+      run.notice = { text: "Seed landed · " + world.sites[landing].name, until: run.time + 1.6 };
+    } else {
+      run.water--;
+      run.notice = { text: "Drop missed the clearing", until: run.time + 1.6 };
+    }
+  }
 }
 export function advance(world: World, run: Run, axis: Point, dt: number) {
   if (run.finish) return;
@@ -343,11 +458,18 @@ export function advance(world: World, run: Run, axis: Point, dt: number) {
     active = run.progress === null;
   const damping = 1 - Math.exp(-dt * (world.id === "boat" ? 4 : 8));
   const drift = world.id === "boat" ? (lakeWind(run.time) - 0.5) * 9 : 0;
-  const vx = active ? (dx / length) * world.speed + drift : 0,
-    vy = active ? (dy / length) * world.speed : 0;
+  const pull =
+    world.id === "boat" && run.maneuver
+      ? (run.maneuver.strong ? 198 : 93) *
+        Math.max(0, 1 - (run.time - run.maneuver.started) / techniques.boat.duration)
+      : 0;
+  const bearing = run.maneuver?.heading ?? run.heading;
+  const vx = active ? (dx / length) * world.speed + drift + Math.sin(bearing) * pull : 0,
+    vy = active ? (dy / length) * world.speed - Math.cos(bearing) * pull : 0;
   run.velocity.x += (vx - run.velocity.x) * damping;
   run.velocity.y += (vy - run.velocity.y) * damping;
   const speed = Math.hypot(run.velocity.x, run.velocity.y);
+  if (world.id === "boat") run.oarBeat += dt * (0.7 + Math.min(1.5, speed / world.speed) * 4.5);
   if (speed > 2) {
     const angle = Math.atan2(run.velocity.x, -run.velocity.y) - run.heading;
     run.heading += Math.atan2(Math.sin(angle), Math.cos(angle)) * (1 - Math.exp(-8 * dt));
@@ -370,9 +492,14 @@ export function advance(world: World, run: Run, axis: Point, dt: number) {
     for (let i = 0; i < asteroidCount && run.impact === 0; i++) {
       const rock = asteroidAt(i, run.time);
       if (!rock.hidden && distance(rock, run.position) < asteroidRadius(i) * rock.scale + 10) {
-        run.shields--;
+        const deflected = !!run.maneuver && run.time - run.maneuver.started < techniques.ship.duration;
+        if (deflected) {
+          run.techniqueHits++;
+          run.maneuver = null;
+          run.notice = { text: "Impact deflected", until: run.time + 1.6 };
+        } else run.shields--;
         run.impact = 2;
-        run.message = "Asteroid impact.";
+        run.message = deflected ? "Shield absorbed the impact." : "Asteroid impact.";
         run.progress = null;
         const a = Math.atan2(run.position.y - rock.y, run.position.x - rock.x);
         run.position = limitPoint(world, { x: rock.x + Math.cos(a) * 44, y: rock.y + Math.sin(a) * 44 });
@@ -386,6 +513,7 @@ export function advance(world: World, run: Run, axis: Point, dt: number) {
       return;
     }
   }
+  resolveManeuver(world, run);
   if (run.progress !== null) {
     run.progress += dt;
     if (run.progress >= world.duration) {

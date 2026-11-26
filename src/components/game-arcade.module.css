@@ -96,6 +96,9 @@
 .picker {
   display: none;
 }
+.viewport {
+  position: relative;
+}
 .stage {
   position: relative;
   isolation: isolate;
@@ -196,6 +199,118 @@
   background: #121816bd;
   padding: 0.45rem 0.78rem;
   font-size: 0.75rem;
+}
+.instruments .sound {
+  margin-left: auto;
+  margin-right: 0.35rem;
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
+.techniquePanel {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 1.65rem clamp(0.75rem, 2vw, 1.4rem) 0.8rem;
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(9, 16, 17, 0.83));
+  color: #fff9ef;
+}
+.techniqueReadout {
+  max-width: 32rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px #000;
+}
+.strokeGauge {
+  display: block;
+  position: relative;
+  margin: 0.5rem 0 0.2rem;
+  width: 104px;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e0d4bf66 76%, #edc383 76%);
+}
+.strokeGauge i {
+  position: absolute;
+  top: -3px;
+  height: 10px;
+  width: 2px;
+  background: white;
+}
+.techniqueButton {
+  position: relative;
+  pointer-events: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  border: 1px solid #ffffff5c;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: #10191cec;
+  padding: 0.55rem 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.techniqueButton i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 0.12s linear;
+}
+.techniqueButton kbd {
+  font:
+    10px ui-monospace,
+    monospace;
+  border: 1px solid #fff5;
+  border-radius: 3px;
+  padding: 0.15rem 0.25rem;
+  color: #eee;
+}
+.cover .result {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 680px) {
+  .viewport {
+    display: flex;
+    flex-direction: column;
+  }
+  .viewport .instruments {
+    position: static;
+    order: -1;
+    padding: 0.25rem 0.7rem;
+  }
+  .viewport .instruments span {
+    background: transparent;
+    border: 0;
+    padding-left: 0;
+  }
+  .viewport .techniquePanel {
+    position: static;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    background: #20231f;
+  }
+  .techniqueReadout {
+    font-size: 0.7rem;
+  }
+  .techniqueButton {
+    padding: 0.5rem 0.65rem;
+  }
+  .techniqueButton kbd {
+    display: none;
+  }
 }
 .instruments button {
   pointer-events: auto;

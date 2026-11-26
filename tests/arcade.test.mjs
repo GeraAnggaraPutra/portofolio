@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   advance, asteroidAt, beginAction, distance, lakeWind, lightingThreshold,
-  newRun, objective, spring, steerTo, worlds,
+  newRun, objective, spring, steerTo, worlds, triggerTechnique, dragonfly,
 } from "../src/lib/game-rules.ts";
 
 const idle = { x: 0, y: 0 };
@@ -19,6 +19,54 @@ test("both steering inputs move every protagonist over time", () => {
     advance(world, run, { x: -1, y: 0 }, step);
     assert.equal(run.destination, null);
   }
+});
+
+test("a breach catches a dragonfly once at each lily", () => {
+  const world=worlds[0], run=newRun(world);
+  for(let attempt=0;attempt<2;attempt++){
+    run.position=dragonfly(world,run);
+    triggerTechnique(world,run);
+    for(let i=0;i<54;i++) advance(world,run,idle,step);
+    assert.equal(run.techniqueHits,1);
+  }
+});
+
+test("a well timed oar stroke carries the boat further through the water", () => {
+  const world=worlds[1];
+  function glide(time){
+    const run=newRun(world);
+    run.time=time;run.heading=Math.PI/2;
+    triggerTechnique(world,run);
+    for(let i=0;i<24;i++)advance(world,run,idle,step);
+    return run;
+  }
+  const weak=glide(0), strong=glide(1/1.22);
+  assert.ok(strong.position.x>weak.position.x+15);
+  assert.equal(strong.techniqueHits,1);
+});
+
+test("aerial planting follows the dropped pod, can reach another clearing and consumes one charge",()=>{
+  const world=worlds[2], run=newRun(world);
+  run.position={...world.sites[3]};
+  triggerTechnique(world,run);
+  run.position={...world.spawn};
+  beginAction(world,run);
+  for(let i=0;i<33;i++)advance(world,run,idle,step);
+  assert.equal(run.visited[3],true);assert.equal(run.current,0);assert.equal(run.water,1);
+  triggerTechnique(world,run);
+  for(let i=0;i<33;i++)advance(world,run,idle,step);
+  assert.equal(run.water,0);assert.equal(objective(world,run),spring);
+  triggerTechnique(world,run);assert.equal(run.maneuver,null);
+});
+
+test("pulse absorbs one hit and cannot be rearmed during recharge",()=>{
+  const world=worlds[3],run=newRun(world);
+  run.position=asteroidAt(0,step);triggerTechnique(world,run);
+  advance(world,run,idle,step);
+  assert.equal(run.shields,3);assert.equal(run.techniqueHits,1);
+  triggerTechnique(world,run);assert.equal(run.maneuver,null);
+  for(let i=0;i<135;i++)advance(world,run,idle,step);
+  triggerTechnique(world,run);assert.ok(run.maneuver);
 });
 
 test("objectives require proximity and the island's spring replenishes a depleted tank", () => {
