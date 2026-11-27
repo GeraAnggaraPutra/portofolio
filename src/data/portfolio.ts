@@ -46,6 +46,7 @@ export type SkillGroup = {
   title: string;
   icon: LucideIcon;
   items: string[];
+  station: { x: number; y: number };
 };
 
 export const navItems = [
@@ -420,31 +421,37 @@ export const experiences: Experience[] = [
 export const skillGroups: SkillGroup[] = [
   {
     title: "Backend Mindset",
+    station: { x: 100, y: 139 },
     icon: Workflow,
     items: ["Go", "REST API", "Microservices", "API Gateway", "Transactions", "Kafka"],
   },
   {
     title: "Data Layer",
+    station: { x: 300, y: 139 },
     icon: Database,
     items: ["PostgreSQL", "MySQL", "SQL Server", "Oracle", "MongoDB", "Redis"],
   },
   {
     title: "Delivery",
+    station: { x: 500, y: 114 },
     icon: GitBranch,
     items: ["Git", "GitHub", "GitLab", "Docker", "Docker Compose", "CI/CD"],
   },
   {
     title: "Cloud & Integrations",
+    station: { x: 700, y: 88 },
     icon: Cloud,
     items: ["Google Cloud Storage", "Amazon S3", "Firebase (FCM)", "Xendit", "Midtrans", "GoPay", "Telegram Bot API", "REST Webhooks"],
   },
   {
     title: "Observability",
+    station: { x: 900, y: 150 },
     icon: Activity,
     items: ["Grafana", "Loki", "Alloy", "Prometheus", "Structured Logs"],
   },
   {
     title: "Collaboration",
+    station: { x: 1100, y: 159 },
     icon: BriefcaseBusiness,
     items: ["Swagger", "Postman", "Jira", "Lark", "Code Review"],
   },
