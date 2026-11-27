@@ -13,7 +13,7 @@ export function Education() {
       <SectionHeader
         eyebrow="Education"
         title="Where it started."
-        description="Formal background in software engineering — before Go, before production systems."
+        description="Vocational training in Bandung, Indonesia, with a focus on web applications and relational databases."
       />
 
       <Reveal>
@@ -42,6 +42,15 @@ export function Education() {
           <p className="mt-5 text-sm leading-6 text-zinc-400 sm:pl-[3.75rem]">
             {edu.description}
           </p>
+          <div className="mt-6 border-t border-white/10 pt-5 sm:ml-[3.75rem]">
+            <h4 className="font-semibold text-white">School project · Car Rental System</h4>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-zinc-300">
+              A classmate and I built a Laravel application for managing bookings, vehicle availability
+              and customer records. We connected a MySQL database to a Blade and Bootstrap interface
+              so an administrator could track reservations and update a vehicle’s status in one place.
+            </p>
+            <a className="mt-3 inline-flex min-h-11 items-center text-sm text-amber-300 underline underline-offset-4" href="https://github.com/GeraAnggaraPutra/Rental-Mobil">View the school project on GitHub</a>
+          </div>
         </div>
       </Reveal>
     </section>

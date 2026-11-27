@@ -52,9 +52,9 @@ export type SkillGroup = {
 export const navItems = [
   { label: "About", href: "#about" },
   { label: "Projects", href: "#projects" },
-  { label: "Explore", href: "#unwind" },
   { label: "Experience", href: "#experience" },
   { label: "Stack", href: "#stack" },
+  { label: "Explore", href: "#unwind" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -501,10 +501,10 @@ export const siteStack = {
 export const education = [
   {
     school: "SMK Assalaam Bandung",
-    major: "Rekayasa Perangkat Lunak",
+    major: "Software Engineering (Rekayasa Perangkat Lunak)",
     period: "Jun 2020 – Jun 2023",
     description:
-      "Focused on Laravel-based web development and MySQL database systems. Supplemented with basic Java programming and Flutter for mobile app prototyping.",
+      "I studied how to turn a business workflow into a web application, from modelling records in MySQL to building forms and server-side logic in PHP and Laravel. Alongside web development, I learned basic Java and used Flutter to prototype mobile apps.",
   },
 ];
 

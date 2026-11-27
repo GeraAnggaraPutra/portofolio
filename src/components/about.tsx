@@ -29,7 +29,7 @@ export function About() {
             <p className="mono mb-5 text-xs font-medium uppercase tracking-[0.22em] text-amber-400">About the engineer</p>
             <h2 className="max-w-xl text-balance text-3xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">Backend first.<br /><span className="text-zinc-500">People and outcomes always.</span></h2>
             <div className="mt-7 max-w-xl space-y-5 text-base leading-8 text-zinc-400">
-              <p>I started coding Go a few months after graduating high school in 2023. At PLABS.ID, I moved from intern to software engineer while building systems for client operations.</p>
+              <p>I learned Go during my internship at PLABS.ID in 2023. Over the next two years, I progressed to Software Engineer and built backend systems for client operations, including travel requests and warehouse inventory.</p>
               <p>Today I work on backend services at Nusapala across HRIS, parking membership, asset tracking, and observability. My focus is the part users rarely see: rules that stay correct, integrations that recover, and behavior the team can investigate.</p>
             </div>
             <Link href="/projects/unara-people" className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-200 transition-colors hover:text-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">See these principles in UNARA People <ArrowUpRight size={16} aria-hidden="true" /></Link>

@@ -2,73 +2,39 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, Briefcase, GraduationCap, Maximize2, Minimize2, Pause, Play, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowUpRight, Briefcase, Maximize2, Minimize2, Pause, Play, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { SectionHeader } from "./section-header";
 import { Reveal } from "./reveal";
 
 /* ─── Data (mirror of solar-system.html) ────────────────────── */
 const stops = [
   {
-    id: "earth",
-    name: "SMK Assalaam Bandung",
-    role: "Rekayasa Perangkat Lunak",
-    period: "Jun 2020 – Jun 2023",
-    city: "Bandung",
-    type: "education" as const,
-    color: "#34d399",
-    glowRgb: "52,211,153",
-    summary:
-      "Foundation years. Learned Laravel, PHP, and MySQL from scratch. Built the Car Rental System as first full-stack project with a team of two.",
-    stack: ["Laravel", "PHP", "MySQL", "JavaScript", "Bootstrap"],
+    id: "neptune", name: "PT Nusapala Berkah Autonomous", role: "Backend Developer",
+    period: "Jul 2025 – Present", city: "Jakarta", color: "#f59e0b", glowRgb: "245,158,11",
+    summary: "I build Go services for web and mobile teams. I turn functional specifications into API contracts, database transactions and unit tests for the business rules behind each endpoint.",
+    details: [
+      ["UNARA People", "I independently engineered the backend for the SaaS administration tools, web HR workspace and employee app. The gateway validates access, Master holds company rules, Transaction processes attendance, requests, approvals and payroll, and Report serves results and payslips. For attendance sync and payroll, I use transactions and retry-safe processing to keep a repeated request from applying the same change twice."],
+      ["MyNusapala", "I refactored parking membership APIs from Laravel to Go, restructuring queries and request handling to improve response times. I integrated Xendit and Midtrans for membership payments and GoPay linking, and routed requests to the appropriate parking location while keeping local records in sync."],
+      ["Engineering practice", "I document REST APIs in Swagger and maintain reusable Go templates with routing, middleware, unit tests and Docker Compose environments. I review code and mentor colleagues on Go implementation. When an operation fails, I trace requests through logs, metrics and database queries."],
+    ],
+    stack: ["Go", "PostgreSQL", "Redis", "Swagger", "Docker", "Prometheus", "Grafana", "Loki"],
   },
   {
-    id: "jupiter",
-    name: "PLABS.ID",
-    role: "Intern → Junior SE → Software Engineer",
-    period: "May 2023 – May 2025",
-    city: "Bandung",
-    type: "work" as const,
-    color: "#38bdf8",
-    glowRgb: "56,189,248",
-    summary:
-      "Progressed through three roles in two years. Delivered backend systems across HRIS, travel, inventory, and company platforms. Mentored vocational school interns to Go CRUD APIs with JWT auth in 3 months.",
-    stack: ["Go", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "Redis", "GCS", "FCM"],
-  },
-  {
-    id: "neptune",
-    name: "PT Nusapala Berkah Autonomous",
-    role: "Backend Developer",
-    period: "Jul 2025 – Present",
-    city: "Jakarta",
-    type: "work" as const,
-    color: "#f59e0b",
-    glowRgb: "245,158,11",
-    summary:
-      "Design and develop scalable Go backend services for HRIS and parking platforms. Own the full backend lifecycle from FSD to API design, transactions, unit tests, and Docker deployment.",
-    stack: ["Go", "PostgreSQL", "MySQL", "Redis", "Docker", "Grafana", "Loki", "Prometheus"],
+    id: "jupiter", name: "PLABS.ID", role: "Software Engineer",
+    period: "May 2023 – May 2025", city: "Bandung", color: "#38bdf8", glowRgb: "56,189,248",
+    summary: "At PT Padjadjaran Teknologi Informasi, I progressed from intern to Software Engineer. My client work included Tawada’s internal travel and budget requests, with divisional approvals and Epicor synchronization, and a warehouse system that tracked shipments and supported RFID stock counts.",
+    details: [
+      ["Software Engineer · Feb 2024 – May 2025", "I designed schemas and tuned queries across PostgreSQL, MySQL, Microsoft SQL Server and Oracle. I wrote scheduled jobs in Go, used goroutines for concurrent work and Redis to cache repeated reads. I also built Next.js API routes for a conference tool, documented APIs in Postman and integrated Firebase Cloud Messaging and Google Cloud Storage."],
+      ["Working across teams", "I clarified requirements with project managers, agreed on API payloads with frontend engineers, and worked through deployment and usability questions with DevOps and designers. We tracked delivery in Lark."],
+      ["Junior Software Engineer · Sep 2023 – Feb 2024", "I designed PostgreSQL tables and built Go REST APIs, tracked sprint work in Jira, reviewed code and maintained technical documentation. I mentored vocational students through their first backend project. Within three months they could build CRUD APIs with JWT authentication."],
+      ["Software Engineer Intern · May 2023 – Sep 2023", "I learned Go through hands-on API and database work, debugging requests and refining queries. I also maintained Laravel backends, which gave me experience reading and changing an existing application alongside writing new Go code."],
+    ],
+    stack: ["Go", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "Redis", "Next.js", "Postman"],
   },
 ];
 
 /* ─── Info Card ──────────────────────────────────────────────── */
 function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const Icon = stop.type === "education" ? GraduationCap : Briefcase;
-
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-    ref.current.style.transform = `perspective(900px) rotateX(${((y/rect.height)-.5)*-5}deg) rotateY(${((x/rect.width)-.5)*7}deg)`;
-    const g = ref.current.querySelector<HTMLDivElement>(".icg");
-    if (g) g.style.background = `radial-gradient(300px at ${x}px ${y}px, rgba(${stop.glowRgb},.09), transparent 70%)`;
-  };
-  const onLeave = () => {
-    if (!ref.current) return;
-    ref.current.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
-    const g = ref.current.querySelector<HTMLDivElement>(".icg");
-    if (g) g.style.background = "transparent";
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, scale: .97 }}
@@ -78,20 +44,17 @@ function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => voi
       className="mt-5 px-4 sm:px-0"
     >
       <div
-        ref={ref} onMouseMove={onMove} onMouseLeave={onLeave}
         className="relative mx-auto max-w-2xl overflow-hidden rounded-3xl border bg-white/[.03] p-7"
         style={{
           borderColor: `rgba(${stop.glowRgb},.25)`,
           boxShadow: `0 0 60px rgba(${stop.glowRgb},.08), inset 0 0 40px rgba(${stop.glowRgb},.03)`,
-          willChange: "transform", transition: "transform .15s ease-out",
         }}
       >
-        <div className="icg pointer-events-none absolute inset-0 rounded-3xl transition-all duration-200" />
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
               style={{ background: `rgba(${stop.glowRgb},.15)`, border: `1.5px solid rgba(${stop.glowRgb},.4)` }}>
-              <Icon size={18} style={{ color: stop.color }} />
+              <Briefcase size={18} style={{ color: stop.color }} />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">{stop.name}</h3>
@@ -108,6 +71,14 @@ function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => voi
           <span className="mono rounded-full border border-white/10 px-3 py-1 text-[.65rem] uppercase tracking-[.16em] text-zinc-500">{stop.city}</span>
         </div>
         <p className="mt-4 text-sm leading-relaxed text-zinc-400">{stop.summary}</p>
+        <div className="mt-6 space-y-5">
+          {stop.details.map(([title, body]) => (
+            <div key={title}>
+              <h4 className="font-semibold text-zinc-100">{title}</h4>
+              <p className="mt-1 text-sm leading-7 text-zinc-300">{body}</p>
+            </div>
+          ))}
+        </div>
         <div className="mt-5 flex flex-wrap gap-2">
           {stop.stack.map((s, i) => (
             <motion.span key={s}
@@ -126,7 +97,7 @@ function InfoCard({ stop, onClose }: { stop: typeof stops[0]; onClose: () => voi
 
 /* ─── Main ───────────────────────────────────────────────────── */
 export function CareerTimeline() {
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(0);
   const [playing, setPlaying] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -139,7 +110,6 @@ export function CareerTimeline() {
   const selectStop = (index: number) => {
     setSelected(index);
     sendToScene("career-focus", stops[index].id);
-    frameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const toggleFullscreen = async () => {
@@ -221,7 +191,7 @@ export function CareerTimeline() {
         <SectionHeader
           eyebrow="Experience"
           title="Where I grew my craft"
-          description="A journey from first lines of code to production systems. Pick a chapter, then drag the universe around you."
+          description="Explore my backend work at two companies. Select an employer to read about the products, decisions and responsibilities behind each role."
         />
       </Reveal>
 
@@ -269,14 +239,7 @@ export function CareerTimeline() {
       </div>
       <p className="mono mt-3 text-center text-[.62rem] uppercase tracking-[.16em] text-zinc-500 sm:hidden">Pinch or use + / − to zoom · Drag to orbit</p>
 
-      {/* Career info card — driven by postMessage from iframe */}
-      <AnimatePresence mode="wait">
-        {selected !== null && (
-          <InfoCard key={selected} stop={stops[selected]} onClose={() => setSelected(null)} />
-        )}
-      </AnimatePresence>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-3" aria-label="Career chapters">
+      <div className="mt-5 grid gap-3 md:grid-cols-2" aria-label="Career chapters">
         {stops.map((stop, i) => (
           <button key={stop.id}
             type="button"
@@ -294,6 +257,13 @@ export function CareerTimeline() {
           </button>
         ))}
       </div>
+      {/* Career info card — driven by postMessage from iframe */}
+      <AnimatePresence mode="wait">
+        {selected !== null && (
+          <InfoCard key={selected} stop={stops[selected]} onClose={() => setSelected(null)} />
+        )}
+      </AnimatePresence>
+
     </section>
   );
 }

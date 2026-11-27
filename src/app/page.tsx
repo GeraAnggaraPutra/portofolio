@@ -20,10 +20,10 @@ export default function Home() {
           <Hero />
           <About />
           <Projects />
-          <GameArcade />
           <CareerTimeline />
           <TechStack />
           <Education />
+          <GameArcade />
           <Contact />
         </main>
         <Footer />
