@@ -1,0 +1,130 @@
+.footer {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  block-size: clamp(13.75rem, 33.333vw, 30rem);
+  padding-inline: clamp(1.5rem, 8vw, 10rem);
+  overflow: hidden;
+  background: #211b16;
+  content-visibility: auto;
+}
+
+/* Keep the photograph and the valley silhouettes in the same coordinate space. */
+.panorama {
+  position: absolute;
+  z-index: -1;
+  right: 0;
+  top: 50%;
+  width: max(100%, 41.25rem);
+  aspect-ratio: 3;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.farValley,
+.nearValley {
+  position: absolute;
+  inset: 0;
+}
+
+.farValley {
+  clip-path: polygon(0 0, 100% 0, 100% 52%, 88% 57%, 74% 54%, 62% 45.5%, 57% 46%, 50% 48%, 43% 45%, 32% 38%, 20% 27%, 0 12%);
+}
+
+.nearValley {
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 95% 73%, 88% 79%, 76% 72%, 64% 66%, 56% 60%, 49% 57%, 42% 50%, 33% 39%, 24% 30%, 16% 25%, 7% 25%, 0 12%);
+}
+
+.farValley::before,
+.nearValley::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  width: 124%;
+  height: 25%;
+  background: url("../assets/footer/valley-mist.webp") center / 100% 100% no-repeat;
+  animation: drift 26s ease-in-out -9s infinite alternate;
+  --tilt: 2deg;
+}
+
+.farValley::before {
+  top: 32%;
+  opacity: 0.55;
+}
+
+.nearValley::before {
+  top: 47%;
+  height: 32%;
+  opacity: 0.68;
+  --tilt: 6deg;
+  animation-duration: 19s;
+  animation-delay: -6s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes drift {
+  from { transform: translate(-13%, 3%) rotate(var(--tilt)); }
+  to { transform: translate(3%, -4%) rotate(var(--tilt)); }
+}
+
+.backToTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  width: fit-content;
+  color: #fff1dc;
+  font: 400 clamp(2rem, 3.55vw, 4.25rem) / 1.12 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.045em;
+}
+
+.backToTop:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 0.2em;
+  border-radius: 2px;
+}
+
+.arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: max(44px, 1.12em);
+  aspect-ratio: 1;
+  border: 1px solid rgb(255 241 220 / 68%);
+  border-radius: 50%;
+}
+
+.arrow svg {
+  width: 48%;
+  height: 48%;
+  transition: transform 220ms ease-out;
+}
+
+@media (hover: hover) {
+  .backToTop:hover .arrow svg { transform: translateY(-12%); }
+}
+
+@media (max-width: 660px) {
+  .footer::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(90deg, rgb(17 14 12 / 65%), transparent 85%);
+  }
+
+  .panorama { z-index: -2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farValley::before,
+  .nearValley::before {
+    animation: none;
+    transform: translateX(-5%) rotate(var(--tilt));
+  }
+
+  .backToTop .arrow svg {
+    transition: none;
+    transform: none;
+  }
+}
