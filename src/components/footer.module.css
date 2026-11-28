@@ -44,28 +44,42 @@
   width: 124%;
   height: 25%;
   background: url("../assets/footer/valley-mist.webp") center / 100% 100% no-repeat;
-  animation: drift 26s ease-in-out -9s infinite alternate;
+  animation: drift 14s ease-in-out -6s infinite alternate;
   --tilt: 2deg;
 }
 
 .farValley::before {
   top: 32%;
-  opacity: 0.55;
+  opacity: .9;
 }
 
 .nearValley::before {
-  top: 47%;
-  height: 32%;
-  opacity: 0.68;
+  top: 44%;
+  height: 38%;
+  opacity: 1;
   --tilt: 6deg;
-  animation-duration: 19s;
+  animation-duration: 10s;
   animation-delay: -6s;
   animation-direction: alternate-reverse;
 }
 
+/* Low wisps lift from the valley floor in front of the distant bank. */
+.nearValley::after {
+  content: "";
+  position: absolute;
+  inset: 50% -20% 8% -16%;
+  background: url("../assets/footer/valley-mist.webp") center / 88% 100% repeat-x;
+  animation: lift 13s ease-in-out -4s infinite alternate;
+}
+
+@keyframes lift {
+  from { transform: translate(-8%, 12%) rotate(4deg); opacity: .48; }
+  to { transform: translate(11%, -9%) rotate(5deg); opacity: .88; }
+}
+
 @keyframes drift {
-  from { transform: translate(-13%, 3%) rotate(var(--tilt)); }
-  to { transform: translate(3%, -4%) rotate(var(--tilt)); }
+  from { transform: translate(-19%, 8%) rotate(var(--tilt)); }
+  to { transform: translate(6%, -7%) rotate(var(--tilt)); }
 }
 
 .backToTop {
@@ -74,7 +88,9 @@
   gap: 0.42em;
   width: fit-content;
   color: #fff1dc;
-  font: 400 clamp(2rem, 3.55vw, 4.25rem) / 1.12 Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 3.55vw, 4.25rem);
+  font-weight: 550;
+  line-height: 1.12;
   letter-spacing: -0.045em;
 }
 
@@ -117,6 +133,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nearValley::after { animation: none; opacity: .5; }
   .farValley::before,
   .nearValley::before {
     animation: none;

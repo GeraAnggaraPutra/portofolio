@@ -21,11 +21,6 @@
   padding: clamp(1.4rem, 4vw, 3.4rem) clamp(1.25rem, 4vw, 3.4rem) 0;
 }
 
-.heading h2,
-.name,
-.ticket {
-  font-family: Georgia, "Times New Roman", serif;
-}
 
 .heading h2 {
   font-size: clamp(3rem, 6.4vw, 5.75rem);

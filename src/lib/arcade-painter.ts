@@ -23,9 +23,9 @@ type Brush = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
 const period = (a: number, n: number) => ((a % n) + n) % n;
 const extras: Record<WorldId, string[]> = {
-  koi: [],
-  boat: ["lantern"],
-  drone: ["sapling"],
+  koi: ["frog", "gold", "pearl"],
+  boat: ["lantern", "gold"],
+  drone: ["maple", "rabbit", "fawn"],
   ship: ["asteroid"],
 };
 export async function loadArtwork(world: World): Promise<Images> {
@@ -38,7 +38,7 @@ export async function loadArtwork(world: World): Promise<Images> {
   return Object.fromEntries(
     await Promise.all([
       load("plate", "/games/" + world.image + ".webp"),
-      ...[world.id, ...extras[world.id]].map((key) => load(key, "/games/sprites/" + key + ".webp")),
+      ...[world.id, ...extras[world.id]].map((key) => load(key, "/games/sprites/" + (key === "boat" ? "skiff" : key) + ".webp")),
     ]),
   );
 }
@@ -50,16 +50,16 @@ export function cameraFor(width: number, height: number, position: Point, world:
   const top = clamp(281 + (position.y - 281) * 0.22 - height / (2 * scale), 0, 562 - height / scale);
   return { scale, left, top };
 }
-function sprite(ctx: Brush, img: Bitmap, x: number, y: number, size: number, heading = 0, frame = 0) {
-  const cols = Math.round(img.width / 160),
-    rows = Math.round(img.height / 160);
+function sprite(ctx: Brush, img: Bitmap, x: number, y: number, size: number, heading = 0, frame = 0, cell = 160) {
+  const cols = Math.round(img.width / cell),
+    rows = Math.round(img.height / cell);
   const turn = period(Math.round((heading / TAU) * cols), cols);
   ctx.drawImage(
     img,
-    turn * 160,
-    period(Math.floor(frame), rows) * 160,
-    160,
-    160,
+    turn * cell,
+    period(Math.floor(frame), rows) * cell,
+    cell,
+    cell,
     x - size / 2,
     y - size / 2,
     size,
@@ -372,6 +372,94 @@ function islandWater(ctx: Brush, plate: Bitmap, t: number) {
     ctx.stroke();
   }
 }
+function rowboat(ctx: Brush, hull: Bitmap, x: number, y: number, size: number, heading: number, beat: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size / 100, size / 128);
+  ctx.rotate(heading);
+  const beam = 100 * hull.width / hull.height;
+  ctx.drawImage(hull, -beam / 2, -50, beam, 100);
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.translate(side * beam * .38, 4);
+    ctx.rotate(side * Math.sin(beat) * .6);
+    ctx.lineCap = "round";
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#c59763";
+    ctx.beginPath();
+    ctx.moveTo(-side * 6, 0);
+    ctx.lineTo(side * 22, 1);
+    ctx.stroke();
+    ellipse(ctx, side * 23, 1, 6, 2.3, "#986640");
+    ctx.restore();
+  }
+  glow(ctx, 0, -34, 12, "rgba(255,181,71,.46)", "transparent");
+  ctx.restore();
+}
+
+// Sample small canopy patches in horizontal bands. Displacement fades at the
+// edge of each crown so the attached trunks and the skyline stay registered.
+function canopy(ctx: Brush, plate: Bitmap, x: number, y: number, w: number, h: number, t: number) {
+  for (let dy = 0; dy < h; dy += 5) {
+    const cross = Math.sin(Math.PI * (dy + 2.5) / h);
+    const width = w * cross;
+    const left = x - width / 2;
+    const shift = cross * Math.sin(t * 1.65 + x * .017 + dy * .026) * 2.8;
+    ctx.drawImage(plate, left * plate.width / 1000, (y + dy) * plate.height / 562,
+      width * plate.width / 1000, 5 * plate.height / 562, left + shift, y + dy, width, 5);
+  }
+}
+
+function lakeLife(ctx: Brush, images: Images, t: number) {
+  for (let i = 0; i < 6; i++) {
+    const phase = t * .25 + i * .51;
+    const x = 465 + Math.cos(phase) * 116 + (i % 3) * 18;
+    const y = 409 + Math.sin(phase) * 32 + i * 4;
+    const heading = Math.atan2(-116 * Math.sin(phase), -32 * Math.cos(phase));
+    ctx.globalAlpha = .48 + .13 * Math.sin(phase);
+    sprite(ctx, images.gold, x, y, 29 + i % 3 * 4, heading, t * 6 + i, 48);
+  }
+  ctx.globalAlpha = 1;
+  canopy(ctx, images.plate, 159, 15, 214, 80, t);
+  canopy(ctx, images.plate, 278, 50, 115, 55, t);
+  for (let i = 0; i < 16; i++) {
+    const age = period(t / 13 + i * .618, 1);
+    const x = 50 + i % 7 * 59 + age * 87 + Math.sin(age * 12 + i) * 16;
+    const y = 27 + i % 3 * 20 + 251 * age;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.sin(i + age * 16));
+    ctx.globalAlpha = Math.min(1, age * 10, (1 - age) * 10);
+    ellipse(ctx, 0, 0, 2.7, .7 + Math.abs(Math.cos(age * 15 + i)), "#ebb3a9");
+    ctx.restore();
+  }
+  // Sunset glints lengthen toward the near shore.
+  for (let i = 0; i < 32; i++) {
+    const phase = t * 1.6 + i * 7.3;
+    const y = 271 + i * 5;
+    const x = 300 + Math.sin(i * 17) * (12 + i * 2.1) + Math.sin(phase) * 4;
+    ellipse(ctx, x, y, 3 + i * .34, .55, `rgba(255,188,116,${.13 + .12 * Math.cos(phase)})`);
+  }
+}
+
+function wildlife(ctx: Brush, img: Bitmap, x: number, ground: number, h: number, lift: number, facing: number, breath: number) {
+  const width = h * img.width / img.height;
+  shadow(ctx, x, ground, width * .49, h * .12, .33 - lift * .009);
+  ctx.save();
+  ctx.translate(x, ground - lift);
+  ctx.scale(facing, 1 + breath * .018);
+  ctx.drawImage(img, -width / 2, -h, width, h);
+  ctx.restore();
+}
+
+function hoppingAnimal(ctx: Brush, img: Bitmap, x: number, y: number, h: number, t: number, span: number) {
+  const leg = Math.floor(t / 4);
+  const facing = leg % 2 ? -1 : 1;
+  const progress = clamp((t % 4 - 2.8) / .55, 0, 1);
+  const lift = Math.sin(progress * Math.PI) * h * .5;
+  wildlife(ctx, img, x + facing * (progress - .5) * span, y, h, lift, facing, Math.sin(t * 3));
+}
+
 function drawSites(ctx: Brush, world: World, run: Run, images: Images) {
   const t = run.time;
   world.sites.forEach((site, i) => {
@@ -409,8 +497,13 @@ function drawSites(ctx: Brush, world: World, run: Run, images: Images) {
         const growth = 0.16 + 0.84 * (1 - Math.exp(-1.4 * (t - run.plantedAt[i])));
         const sway = Math.sin(t * 1.65 + i) * 1.4;
         shadow(ctx, x + 8, y + 2, 20 * growth, 6 * growth, 0.48);
-        sprite(ctx, images.sapling, x + sway * growth, y - 18 * growth, 54 * growth);
-        sprite(ctx, images.sapling, x + 16, y - 4 * growth, 28 * growth, 0.3);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.transform(1, 0, -sway * .022, 1, 0, 0);
+        const height = growth * (63 + i % 3 * 7);
+        const width = height * images.maple.width / images.maple.height;
+        ctx.drawImage(images.maple, -width / 2, -height, width, height);
+        ctx.restore();
       } else {
         shadow(ctx, x, y, 17, 6, 0.35);
         for (let k = 0; k < 3; k++) {
@@ -459,7 +552,8 @@ function actor(ctx: Brush, world: World, run: Run, images: Images) {
     run.companions.forEach((f, i) => {
       ctx.globalAlpha = 0.72 + 0.07 * Math.sin(t * 0.69 + i);
       shadow(ctx, f.x + 3, f.y + 5, 18, 6, 0.31);
-      sprite(ctx, images.koi, f.x, f.y, 44 + i * 3, f.heading, f.beat * 12);
+      const skin = ["pearl", "gold", "koi"][i % 3];
+      sprite(ctx, images[skin], f.x, f.y, 36 + (i % 4) * 6, f.heading, f.beat * 12, skin === "koi" ? 160 : 48);
     });
     ctx.globalAlpha = 1;
     shadow(ctx, x + 4, y + 6, 25, 9, 0.4);
@@ -483,10 +577,10 @@ function actor(ctx: Brush, world: World, run: Run, images: Images) {
     ctx.translate(x, y + 7);
     ctx.scale(1, -0.48);
     ctx.globalAlpha = 0.19;
-    sprite(ctx, images.boat, 0, 0, size, h, run.oarBeat);
+    rowboat(ctx, images.boat, 0, 0, size, h, run.oarBeat);
     ctx.restore();
     shadow(ctx, x, y + 4, size * 0.39, size * 0.13, 0.6);
-    sprite(ctx, images.boat, x, y + Math.sin(t * 1.6) * 1.3, size, h, run.oarBeat);
+    rowboat(ctx, images.boat, x, y + Math.sin(t * 1.6) * 1.3, size, h, run.oarBeat);
   } else if (world.id === "drone") {
     const height = run.progress !== null ? 11 : 23 + Math.sin(t * 2) * 2;
     shadow(ctx, x + 9, y + 3, 31, 10, 0.64);
@@ -671,6 +765,7 @@ export function paint(
   if (!quiet && !pondRendered && (world.id === "boat" || world.id === "koi"))
     water(ctx, images.plate, run.time, world.id === "boat");
   if (world.id === "boat") {
+    lakeLife(ctx, images, quiet ? 0 : run.time);
     const dusk = run.visited.filter(Boolean).length / world.sites.length;
     ctx.fillStyle = `rgba(19,24,59,${0.32 * dusk})`;
     ctx.fillRect(0, 0, 1000, 562);
@@ -683,6 +778,31 @@ export function paint(
       ctx.scale(1, 0.42);
       glow(ctx, 0, 0, 260, "rgba(31,47,52,.22)", "rgba(31,47,52,0)");
       ctx.restore();
+    }
+  }
+  const natureTime = quiet ? 0 : run.time;
+  if (world.id === "drone") {
+    canopy(ctx, images.plate, 204, 6, 170, 65, natureTime);
+    canopy(ctx, images.plate, 829, 95, 108, 65, natureTime);
+    hoppingAnimal(ctx, images.rabbit, 360, 189, 25, natureTime, 43);
+    wildlife(ctx, images.fawn, 615, 264, 43, 0, -1, Math.sin(natureTime * 2));
+    hoppingAnimal(ctx, images.rabbit, 488, 319, 21, natureTime + 1.4, 37);
+  } else if (world.id === "koi") {
+    hoppingAnimal(ctx, images.frog, 449, 473, 17, natureTime, 27);
+    hoppingAnimal(ctx, images.frog, 251, 431, 14, natureTime + 1.8, 16);
+  } else if (world.id === "ship" && !quiet) {
+    const age = period(run.time / 8, 1);
+    if (age < .22) {
+      const x = 350 + age * 1040, y = 74 + age * 300;
+      const streak = ctx.createLinearGradient(x - 47, y - 14, x, y);
+      streak.addColorStop(0, "transparent");
+      streak.addColorStop(1, `rgba(195,225,255,${Math.sin(Math.PI * age / .22)})`);
+      ctx.strokeStyle = streak;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(x - 47, y - 14);
+      ctx.lineTo(x, y);
+      ctx.stroke();
     }
   }
   drawSites(ctx, world, run, images);

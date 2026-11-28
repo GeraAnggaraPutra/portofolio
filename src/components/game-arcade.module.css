@@ -23,7 +23,7 @@
 .eyebrow,
 .location,
 .shelf small {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: inherit;
 }
 .sectionLabel,
 .eyebrow,
@@ -141,9 +141,9 @@
   color: var(--accent);
 }
 .cover h3 {
-  font:
-    500 clamp(2rem, 4.8vw, 4.3rem) / 1.02 Georgia,
-    serif;
+  font-size: clamp(2rem, 4.8vw, 4.3rem);
+  font-weight: 550;
+  line-height: 1.02;
   margin: 0.45rem 0 0.55rem;
   letter-spacing: -0.048em;
   text-wrap: balance;
@@ -269,9 +269,7 @@
   transition: transform 0.12s linear;
 }
 .techniqueButton kbd {
-  font:
-    10px ui-monospace,
-    monospace;
+  font-size: 10px;
   border: 1px solid #fff5;
   border-radius: 3px;
   padding: 0.15rem 0.25rem;

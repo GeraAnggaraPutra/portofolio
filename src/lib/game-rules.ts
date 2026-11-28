@@ -193,9 +193,9 @@ export function newRun(world: World): Run {
     message: "",
     swimBeat: 0,
     ripples: [],
-    companions: Array.from({ length: 3 }, (_, i) => ({
-      x: world.spawn.x + 28 + i * 23,
-      y: world.spawn.y + 18 + i * 5,
+    companions: Array.from({ length: world.id === "koi" ? 6 : 0 }, (_, i) => ({
+      x: world.spawn.x + Math.cos(i * 2.4) * 51,
+      y: world.spawn.y + Math.sin(i * 2.4) * 26,
       heading: -0.45,
       speed: 12,
       beat: i * 0.37,
@@ -348,7 +348,7 @@ function swimSchool(world: World, run: Run, speed: number, dt: number) {
   run.companions.forEach((fish, i) => {
     const feeding = run.progress !== null;
     const phase = i * 2.4 + run.time * (feeding ? 0.63 : 0.39);
-    const spread = feeding ? 21 : 42;
+    const spread = feeding ? 25 : 44 + (i % 3) * 12;
     const target = limitPoint(world, {
       x: run.position.x + Math.cos(phase) * spread - Math.sin(run.heading) * speed * 0.19,
       y: run.position.y + Math.sin(phase) * spread * 0.65 + Math.cos(run.heading) * speed * 0.13,
